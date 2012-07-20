@@ -1,5 +1,5 @@
 {
-   "abstract" : "match strings with errors",
+   "abstract" : "partial or fuzzy string matching using edit distances",
    "author" : [
       "Ben Bullock <bkb@cpan.org>"
    ],
@@ -43,5 +43,5 @@
          "url" : "https://github.com/benkasminbullock/Text-Fuzzy"
       }
    },
-   "version" : "0.01"
+   "version" : "0.02"
 }

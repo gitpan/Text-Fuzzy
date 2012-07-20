@@ -50,6 +50,9 @@ static void default_error_handler (const char * file, int line,
 typedef enum {
     text_fuzzy_status_ok,
     text_fuzzy_status_memory_error,
+    text_fuzzy_status_open_error,
+    text_fuzzy_status_close_error,
+    text_fuzzy_status_read_error,
 }
 text_fuzzy_status_t;
 
@@ -85,8 +88,10 @@ typedef struct text_fuzzy {
 
 }
 text_fuzzy_t;
-#line 46 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 47 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_compare_single (text_fuzzy_t * text_fuzzy, text_fuzzy_string_t * b);
 #line 149 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_set_search_term (text_fuzzy_t * text_fuzzy);
+#line 159 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+text_fuzzy_status_t text_fuzzy_scan_file (text_fuzzy_t * text_fuzzy, char * file_name, char ** nearest_ptr);
 #endif /* TEXT_FUZZY_H */

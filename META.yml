@@ -1,5 +1,5 @@
 ---
-abstract: 'match strings with errors'
+abstract: 'partial or fuzzy string matching using edit distances'
 author:
   - 'Ben Bullock <bkb@cpan.org>'
 build_requires:
@@ -21,4 +21,4 @@ requires: {}
 resources:
   bugtracker: https://github.com/benkasminbullock/Text-Fuzzy/issues
   repository: https://github.com/benkasminbullock/Text-Fuzzy
-version: 0.01
+version: 0.02

@@ -106,6 +106,7 @@ const char * text_fuzzy_statuses[] = {
     "open error",
     "close error",
     "read error",
+    "line too long",
 };
 
 #define STATIC static
@@ -167,17 +168,16 @@ text_fuzzy_t;
 
 #endif /* HEADER */
 
-FUNC (compare_single) (text_fuzzy_t * text_fuzzy,
+FUNC (compare_single) (text_fuzzy_t * tf,
                        text_fuzzy_string_t * b)
 {
-    /* The edit distance between "text_fuzzy->search_term" and the
-       truncated version of "text_fuzzy->buf". */
+    /* The edit distance between "tf->search_term" and the
+       truncated version of "tf->buf". */
     int d;
 
-    text_fuzzy->found = 0;
+    tf->found = 0;
 
-    if (text_fuzzy->unicode) {
-        int d;
+    if (tf->unicode) {
         int allocated;
 
         allocated = 0;
@@ -201,14 +201,17 @@ FUNC (compare_single) (text_fuzzy_t * text_fuzzy,
             }
             b->ulength = b->length;
         }
-        d = distance_int (b->unicode, b->ulength,
-                          text_fuzzy->text.unicode,
-                          text_fuzzy->text.ulength,
-                          text_fuzzy->max_distance);
-        if (d < text_fuzzy->max_distance) {
-            text_fuzzy->found = 1;
-            text_fuzzy->distance = d;
+        if (tf->max_distance >= 0) {
+        /* If the distance in the length of the strings is greater
+           than the max distance, give up. */
+        if (abs (tf->text.ulength - b->ulength) > tf->max_distance) {
+            OK;
         }
+        }
+        d = distance_int (b->unicode, b->ulength,
+                          tf->text.unicode,
+                          tf->text.ulength,
+                          tf->max_distance);
         if (allocated) {
             free (b->unicode);
             b->unicode = 0;
@@ -216,33 +219,40 @@ FUNC (compare_single) (text_fuzzy_t * text_fuzzy,
     }
     else {
 
+        if (tf->max_distance >= 0) {
+        /* If the distance in the length of the strings is greater
+           than the max distance, give up. */
+        if (abs (tf->text.length - b->length) > tf->max_distance) {
+            OK;
+        }
+
         /* Alphabet filter: eliminate terms which cannot match. */
 
-        if (text_fuzzy->use_alphabet) {
+        if (tf->use_alphabet) {
             int alphabet_misses;
             int l;
 
             alphabet_misses = 0;
             for (l = 0; l < b->length; l++) {
                 int a = (unsigned char) b->text[l];
-                if (! text_fuzzy->alphabet[a]) {
+                if (! tf->alphabet[a]) {
                     alphabet_misses++;
-                    if (alphabet_misses > text_fuzzy->max_distance) {
+                    if (alphabet_misses > tf->max_distance) {
                         OK;
                     }
                 }
             }
         }
-
+        }
         /* Calculate the edit distance. */
 
         d = distance_char (b->text, b->length,
-                           text_fuzzy->text.text, text_fuzzy->text.length,
-                           text_fuzzy->max_distance);
-        if (d < text_fuzzy->max_distance) {
-            text_fuzzy->found = 1;
-            text_fuzzy->distance = d;
-        }
+                           tf->text.text, tf->text.length,
+                           tf->max_distance);
+    }
+    if (d < tf->max_distance) {
+        tf->found = 1;
+        tf->distance = d;
     }
     OK;
 }
@@ -276,53 +286,130 @@ FUNC (set_search_term) (text_fuzzy_t * text_fuzzy)
     OK;
 }
 
-#define SIZE 0x100
+#define BUF_SIZE 0x1000
+
+typedef struct fuzzy_file {
+    const char * file_name;
+    FILE * fh;
+    char buf[BUF_SIZE];
+    char * line;
+    int length;
+    text_fuzzy_string_t b;
+    int remaining;
+    int offset;
+    int eof : 1;
+}
+fuzzy_file_t;
+
+#define SIZE 0x1000
+
+STATIC FUNC (more_bytes) (fuzzy_file_t * ff)
+{
+    int bytes;
+
+    bytes = fread (ff->buf, sizeof (char), SIZE, ff->fh);
+    if (bytes != SIZE) {
+        if (feof (ff->fh)) {
+            ff->eof = 1;
+        }
+        else {
+            FAIL (bytes != SIZE, read_error);
+        }
+    }
+    ff->remaining = bytes;
+    ff->offset = 0;
+    OK;
+}
+
+STATIC FUNC (get_line) (fuzzy_file_t * ff)
+{
+    int i;
+    static char s[SIZE];
+
+    i = 0;
+    while (1) {
+        char c;
+        if (! ff->remaining) {
+            CALL (more_bytes (ff));
+        }
+        c = ff->buf[ff->offset];
+        ff->offset++;
+        ff->remaining--;
+        if (c == '\n' || (ff->remaining == 0 && ff->eof)) {
+            s[i] = '\0';
+            break;
+        }
+        else {
+            s[i] = c;
+        }
+        i++;
+        FAIL (i >= SIZE, line_too_long);
+    }
+
+    ff->b.text = s;
+    ff->b.length = i;
+
+    OK;
+}
+
+STATIC FUNC (open) (fuzzy_file_t * ff, const char * file_name)
+{
+    ff->file_name = file_name;
+    ff->fh = fopen (ff->file_name, "r");
+    FAIL_MSG (! ff->fh, open_error, "failed to open %s: %s", ff->file_name,
+              strerror (errno));
+    OK;
+}
+
+STATIC FUNC (close) (fuzzy_file_t * ff)
+{
+    FAIL (fclose (ff->fh), close_error);
+    OK;
+}
 
 FUNC (scan_file) (text_fuzzy_t * text_fuzzy, char * file_name,
                   char ** nearest_ptr)
 {
+    fuzzy_file_t ff = {0};
     FILE * fh;
-    char nearest[SIZE];
+    char * nearest;
     int found;
     int max_distance_holder;
 
+    CALL (open (& ff, file_name));
+
     max_distance_holder = text_fuzzy->max_distance;
     
-    fh = fopen (file_name, "r");
-    FAIL_MSG (! fh, open_error, "failed to open %s: %s", file_name,
-              strerror (errno));
     found = 0;
+    nearest = 0;
     while (1) {
-        text_fuzzy_string_t b = {0};
-        char s[SIZE];
-        char * r;
-        int l;
-        r = fgets (s, SIZE - 1, fh);
-        if (! r) {
-            if (feof (fh)) {
-                break;
-            }
-            FAIL_MSG (! r, read_error, "Error reading %s: %s",
-                      file_name, strerror (errno));
-        }
-        l = strlen (s);
-        s[l - 1] = '\0';
-        b.text = s;
-        b.length = l - 1;
-        CALL (compare_single (text_fuzzy, & b));
+        CALL (get_line (& ff));
+        CALL (compare_single (text_fuzzy, & ff.b));
         if (text_fuzzy->found) {
             found = 1;
             if (text_fuzzy->distance < text_fuzzy->max_distance) {
                 text_fuzzy->max_distance = text_fuzzy->distance;
-                strncpy (nearest, s, SIZE);
+                if (! nearest) {
+                    nearest = malloc (ff.b.length + 1);
+                }
+                else {
+                    nearest = realloc (nearest, ff.b.length + 1);
+                }
+                FAIL (! nearest, memory_error);
+                strncpy (nearest, ff.b.text, ff.b.length);
+                nearest[ff.b.length] = '\0';
             }
+        }
+        if (ff.eof && ff.remaining == 0) {
+            break;
         }
     }
 
-    FAIL (fclose (fh), close_error);
+    CALL (close (& ff));
+
     text_fuzzy->max_distance = max_distance_holder;
     if (found) {
-        * nearest_ptr = strdup (nearest);
+        * nearest_ptr = nearest;
     }
     else {
         * nearest_ptr = 0;
@@ -337,6 +424,8 @@ status: open_error
 status: close_error
 
 status: read_error
+
+status: line_too_long
 
 */
 

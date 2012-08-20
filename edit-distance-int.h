@@ -9,7 +9,7 @@
 
 /* From 'edit-distance-int.c': */
 
-#line 12 "edit-distance-int.c"
-int distance_int (const int * word1 , int len1 , const int * word2 , int len2 , int max );
+#line 11 "edit-distance-int.c"
+int distance_int (const unsigned int * word1 , int len1 , text_fuzzy_t * tf );
 
 #endif /* CFH_EDIT_DISTANCE_INT_H */

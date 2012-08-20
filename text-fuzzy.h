@@ -80,19 +80,20 @@ typedef struct text_fuzzy {
     int no_alphabet_filter : 1;
 
     int use_alphabet : 1;
-    /* Do we account for transpositions? */
+    /* Variable edit costs? */
+    int variable_edit_costs : 1;
+    /* Do we account for transpositions? (Currently unused) */
     int transpositions_ok : 1;
-
+    /* Did we find it? */
     int found : 1;
-
+    /* Is this Unicode? */
     int unicode : 1;
-
 }
 text_fuzzy_t;
-#line 47 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 49 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_compare_single (text_fuzzy_t * tf, text_fuzzy_string_t * b);
-#line 158 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
-text_fuzzy_status_t text_fuzzy_set_search_term (text_fuzzy_t * text_fuzzy);
-#line 240 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 137 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+text_fuzzy_status_t text_fuzzy_generate_alphabet (text_fuzzy_t * text_fuzzy);
+#line 238 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_scan_file (text_fuzzy_t * text_fuzzy, char * file_name, char ** nearest_ptr);
 #endif /* TEXT_FUZZY_H */

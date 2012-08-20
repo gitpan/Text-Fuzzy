@@ -9,7 +9,7 @@
 
 /* From 'edit-distance-char.c': */
 
-#line 12 "edit-distance-char.c"
-int distance_char (const char * word1 , int len1 , const char * word2 , int len2 , int max );
+#line 11 "edit-distance-char.c"
+int distance_char (const unsigned char * word1 , int len1 , text_fuzzy_t * tf );
 
 #endif /* CFH_EDIT_DISTANCE_CHAR_H */

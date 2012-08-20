@@ -1,9 +1,12 @@
 #include <string.h>
 #include <errno.h>
+#include "text-fuzzy.h"
 #include "edit-distance-char.h"
 #include "edit-distance-int.h"
 
+#ifndef ERROR_HANDLER
 #define ERROR_HANDLER text_fuzzy_error_handler;
+#endif /* undef ERROR_HANDLER */
 #include "text-fuzzy.h"
 #include <stdio.h>
 #include <stdarg.h>
@@ -132,6 +135,7 @@ End:
 
 
 
+
 #ifdef HEADER
 
 typedef struct text_fuzzy_string {
@@ -156,13 +160,14 @@ typedef struct text_fuzzy {
     int no_alphabet_filter : 1;
 
     int use_alphabet : 1;
-    /* Do we account for transpositions? */
+    /* Variable edit costs? */
+    int variable_edit_costs : 1;
+    /* Do we account for transpositions? (Currently unused) */
     int transpositions_ok : 1;
-
+    /* Did we find it? */
     int found : 1;
-
+    /* Is this Unicode? */
     int unicode : 1;
-
 }
 text_fuzzy_t;
 
@@ -208,10 +213,7 @@ FUNC (compare_single) (text_fuzzy_t * tf,
             OK;
         }
         }
-        d = distance_int (b->unicode, b->ulength,
-                          tf->text.unicode,
-                          tf->text.ulength,
-                          tf->max_distance);
+        d = distance_int (b->unicode, b->ulength, tf);
         if (allocated) {
             free (b->unicode);
             b->unicode = 0;
@@ -220,35 +222,33 @@ FUNC (compare_single) (text_fuzzy_t * tf,
     else {
 
         if (tf->max_distance >= 0) {
-        /* If the distance in the length of the strings is greater
-           than the max distance, give up. */
-        if (abs (tf->text.length - b->length) > tf->max_distance) {
-            OK;
-        }
+            /* If the distance in the length of the strings is greater
+               than the max distance, give up. */
+            if (abs (tf->text.length - b->length) > tf->max_distance) {
+                OK;
+            }
 
-        /* Alphabet filter: eliminate terms which cannot match. */
+            /* Alphabet filter: eliminate terms which cannot match. */
 
-        if (tf->use_alphabet) {
-            int alphabet_misses;
-            int l;
+            if (tf->use_alphabet) {
+                int alphabet_misses;
+                int l;
 
-            alphabet_misses = 0;
-            for (l = 0; l < b->length; l++) {
-                int a = (unsigned char) b->text[l];
-                if (! tf->alphabet[a]) {
-                    alphabet_misses++;
-                    if (alphabet_misses > tf->max_distance) {
-                        OK;
+                alphabet_misses = 0;
+                for (l = 0; l < b->length; l++) {
+                    int a = (unsigned char) b->text[l];
+                    if (! tf->alphabet[a]) {
+                        alphabet_misses++;
+                        if (alphabet_misses > tf->max_distance) {
+                            OK;
+                        }
                     }
                 }
             }
         }
-        }
         /* Calculate the edit distance. */
 
-        d = distance_char (b->text, b->length,
-                           tf->text.text, tf->text.length,
-                           tf->max_distance);
+        d = distance_char (b->text, b->length, tf);
     }
     if (d < tf->max_distance) {
         tf->found = 1;
@@ -259,29 +259,31 @@ FUNC (compare_single) (text_fuzzy_t * tf,
 
 static int max_unique_characters = 45;
 
-FUNC (set_search_term) (text_fuzzy_t * text_fuzzy)
+/* Generate an alphabet from the search word, which is used to filter
+   non-matching terms without using the dynamic programming
+   algorithm. */
+
+FUNC (generate_alphabet) (text_fuzzy_t * text_fuzzy)
 {
     int unique_characters;
     int i;
-    if (text_fuzzy->use_alphabet) {
-        for (i = 0; i < 0x100; i++) {
-            text_fuzzy->alphabet[i] = 0;
+
+    text_fuzzy->use_alphabet = 1;
+
+    for (i = 0; i < 0x100; i++) {
+        text_fuzzy->alphabet[i] = 0;
+    }
+    unique_characters = 0;
+    for (i = 0; i < text_fuzzy->text.length; i++) {
+        int c;
+        c = (unsigned char) text_fuzzy->text.text[i];
+        if (! text_fuzzy->alphabet[c]) {
+            unique_characters++;
+            text_fuzzy->alphabet[c] = 1;
         }
-        unique_characters = 0;
-        for (i = 0; i < text_fuzzy->text.length; i++) {
-            int c;
-            c = (unsigned char) text_fuzzy->text.text[i];
-            if (! text_fuzzy->alphabet[c]) {
-                unique_characters++;
-                text_fuzzy->alphabet[c] = 1;
-            }
-        }
-        if (unique_characters > max_unique_characters) {
-            text_fuzzy->no_alphabet_filter = 1;
-        }
-        else {
-            text_fuzzy->no_alphabet_filter = 0;
-        }
+    }
+    if (unique_characters > max_unique_characters) {
+        text_fuzzy->use_alphabet = 0;
     }
     OK;
 }
@@ -371,7 +373,6 @@ FUNC (scan_file) (text_fuzzy_t * text_fuzzy, char * file_name,
                   char ** nearest_ptr)
 {
     fuzzy_file_t ff = {0};
-    FILE * fh;
     char * nearest;
     int found;
     int max_distance_holder;

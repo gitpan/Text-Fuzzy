@@ -2,18 +2,25 @@
 #include <stdio.h>
 /* For INT_MAX */
 #include <limits.h>
+#include "text-fuzzy.h"
 #include "edit-distance-int.h"
 
-int distance_int (const int * word1,
-                         int len1,
-                         const int * word2,
-                         int len2,
-                         int max)
+int distance_int (const unsigned int * word1,
+                    int len1,
+                    text_fuzzy_t * tf)
 {
+    /* Pull the values from "tf". */
+
+    const unsigned int * word2 = tf->text.unicode;
+    int len2 = tf->text.ulength;
+
     int matrix[2][len2 + 1];
     int i;
     int j;
     int large_value;
+    int max;
+
+    max = tf->max_distance;
 
     /*
       Initialize the 0 row of "matrix".
@@ -43,7 +50,7 @@ int distance_int (const int * word1,
 
     /* Loop over column. */
     for (i = 1; i <= len1; i++) {
-        int c1;
+        unsigned int c1;
         /* The first value to consider of the ith column. */
         int min_j;
         /* The last value to consider of the ith column. */
@@ -82,7 +89,7 @@ int distance_int (const int * word1,
                 matrix[next][j] = large_value;
             }
             else {
-                int c2;
+                unsigned int c2;
 
                 c2 = word2[j-1];
                 if (c1 == c2) {
@@ -90,10 +97,8 @@ int distance_int (const int * word1,
                        the character at position j in word2. */
                     matrix[next][j] = matrix[prev][j-1];
 
-                    //                    printf ("Same %d %d at %d %d\n", c1, c2, i, j);
                 }
                 else {
-                    //                    printf ("Not same %d %d at %d %d\n", c1, c2, i, j);
                     /* The character at position i in word1 is not the
                        same as the character at position j in word2, so
                        work out what the minimum cost for getting to cell

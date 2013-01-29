@@ -132,7 +132,8 @@ Ben Bullock, <bkb@cpan.org>
 
 =head1 COPYRIGHT & LICENCE
 
-This package and associated files are copyright (C) 2012 Ben Bullock.
+This package and associated files are copyright (C) 2012-2013 Ben
+Bullock.
 
 You can use, copy, modify and redistribute this package and associated
 files under the Perl Artistic Licence or the GNU General Public

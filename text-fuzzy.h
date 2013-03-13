@@ -6,7 +6,10 @@ extern const char * text_fuzzy_statuses[];
 typedef int (* error_handler_t) (const char * source_file,
                                  int source_line_number,
                                  const char * message, ...)
-    __attribute__((format (printf, 3, 4)));
+#ifdef __GNUC__
+    __attribute__((format (printf, 3, 4)))
+#endif /* __GNUC__ */
+;
 #endif /* ndef ERROR_HANDLER_H */
 
 extern error_handler_t text_fuzzy_error_handler;
@@ -17,6 +20,20 @@ extern error_handler_t text_fuzzy_error_handler;
 #ifndef ERROR_HANDLER
 #include <stdio.h>
 #include <stdarg.h>
+
+#ifdef __GNUC__
+
+/* The following tells GCC not to warn that "default_error_handler" is
+   unused. */
+
+static void
+default_error_handler (const char *,
+		       int,
+		       const char *, ...) 
+    __attribute__ ((unused));
+
+#endif /* __GNUC__ */
+
 static void default_error_handler (const char * file, int line,
                                    const char * format, ...)
 {
@@ -58,6 +75,8 @@ typedef enum {
 text_fuzzy_status_t;
 
 
+/* This structure contains one string of whatever type. */
+
 typedef struct text_fuzzy_string {
     char * text;
     int length;
@@ -65,6 +84,10 @@ typedef struct text_fuzzy_string {
     int ulength;
 }
 text_fuzzy_string_t;
+
+/* This string contains one string plus additional paraphenalia used
+   in searching for the string, for example the alphabet of the
+   string. */
 
 typedef struct text_fuzzy {
     /* The string we are to match. */
@@ -90,10 +113,10 @@ typedef struct text_fuzzy {
     int unicode : 1;
 }
 text_fuzzy_t;
-#line 49 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 54 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_compare_single (text_fuzzy_t * tf, text_fuzzy_string_t * b);
-#line 137 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 157 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_generate_alphabet (text_fuzzy_t * text_fuzzy);
-#line 238 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 269 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_scan_file (text_fuzzy_t * text_fuzzy, char * file_name, char ** nearest_ptr);
 #endif /* TEXT_FUZZY_H */

@@ -11,7 +11,7 @@ int distance_int (const unsigned int * word1,
 {
     /* Pull the values from "tf". */
 
-    const unsigned int * word2 = tf->text.unicode;
+    const unsigned int * word2 = (const unsigned int *) tf->text.unicode;
     int len2 = tf->text.ulength;
 
     int matrix[2][len2 + 1];

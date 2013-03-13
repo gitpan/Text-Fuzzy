@@ -11,7 +11,7 @@ int distance_char (const unsigned char * word1,
 {
     /* Pull the values from "tf". */
 
-    const unsigned char * word2 = tf->text.text;
+    const unsigned char * word2 = (const unsigned char *) tf->text.text;
     int len2 = tf->text.length;
 
     int matrix[2][len2 + 1];

@@ -71,9 +71,25 @@ typedef enum {
     text_fuzzy_status_close_error,
     text_fuzzy_status_read_error,
     text_fuzzy_status_line_too_long,
+    text_fuzzy_status_ualphabet_on_non_unicode,
+    text_fuzzy_status_max_min_miscalculation,
 }
 text_fuzzy_status_t;
 
+
+/* Alphabet over unicode characters. */
+
+typedef struct ualphabet {
+    int min;
+    int max;
+    /* Number of chars allocated in the following array. */
+    int size;
+    /* Array containing Unicode alphabet. */
+    unsigned char * alphabet;
+
+    int rejected;
+}
+ualphabet_t;
 
 /* This structure contains one string of whatever type. */
 
@@ -98,14 +114,20 @@ typedef struct text_fuzzy {
     int n_mallocs;
     /* Alphabet */
     int alphabet[0x100];
+    /* Unicode alphabet. */
+    ualphabet_t ualphabet;
     int distance;
-    /* Use alphabet filter? */
-    int no_alphabet_filter : 1;
-
+    /* Does the user want to use alphabet filter? Default is yes, so
+       this must be set to a non-zero value to switch off use. */
+    int user_no_alphabet : 1;
+    /* Are we actually going to use it? (This may be false even if the
+       user wants to use it, for silly cases, but is not true if the
+       user does not want to use it.) */
     int use_alphabet : 1;
+    int use_ualphabet : 1;
     /* Variable edit costs? */
     int variable_edit_costs : 1;
-    /* Do we account for transpositions? (Currently unused) */
+    /* Do we account for transpositions? */
     int transpositions_ok : 1;
     /* Did we find it? */
     int found : 1;
@@ -113,10 +135,12 @@ typedef struct text_fuzzy {
     int unicode : 1;
 }
 text_fuzzy_t;
-#line 54 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 92 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+text_fuzzy_status_t text_fuzzy_generate_ualphabet (text_fuzzy_t * tf);
+#line 253 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_compare_single (text_fuzzy_t * tf, text_fuzzy_string_t * b);
-#line 157 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 402 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_generate_alphabet (text_fuzzy_t * text_fuzzy);
-#line 269 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 514 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_scan_file (text_fuzzy_t * text_fuzzy, char * file_name, char ** nearest_ptr);
 #endif /* TEXT_FUZZY_H */

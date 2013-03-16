@@ -1,9 +1,15 @@
-algorithm.tex
 Changes
+declaration
+edit-distance-char-trans.c
+edit-distance-char-trans.h
 edit-distance-char.c
 edit-distance-char.h
+edit-distance-int-trans.c
+edit-distance-int-trans.h
 edit-distance-int.c
 edit-distance-int.h
+examples/extract-kana.pl
+examples/kanji-search.pl
 examples/misspelt-web-page.cgi
 examples/spell-check.pl
 Fuzzy.xs
@@ -13,6 +19,8 @@ Makefile.PL
 MANIFEST			This list of files
 MANIFEST.SKIP
 t/Text-Fuzzy.t
+t/trans.t
+t/unicode-alphabet.t
 t/unicode-nearest.t
 text-fuzzy-perl.c
 text-fuzzy.c

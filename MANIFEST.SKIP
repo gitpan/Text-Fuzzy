@@ -17,3 +17,8 @@ edit-distance-short\..*
 make-edit-distance-c\.pl
 Text-Fuzzy-[\.\d]+
 makeitfile
+# Documentation of module algorithms.
+doc/.*
+# Benchmarking.
+benchmarks/.*
+MYMETA\..*

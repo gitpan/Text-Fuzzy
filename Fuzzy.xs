@@ -56,6 +56,26 @@ CODE:
 	}
 
 
+void
+transpositions_ok (tf, trans)
+	Text::Fuzzy tf;
+	SV * trans;
+CODE:
+	if (SvTRUE (trans)) {
+		tf->transpositions_ok = 1;
+	}
+	else {
+		tf->transpositions_ok = 0;
+	}
+
+int
+get_trans (tf)
+	Text::Fuzzy tf;
+CODE:
+	RETVAL = tf->transpositions_ok;
+OUTPUT:
+	RETVAL
+
 int
 distance (tf, word)
 	Text::Fuzzy tf;
@@ -97,6 +117,18 @@ CODE:
 OUTPUT:
 	RETVAL
 
+
+void
+no_alphabet (tf, yes_no)
+	Text::Fuzzy tf;
+        SV * yes_no;
+CODE:
+	tf->user_no_alphabet = SvTRUE (yes_no);
+	if (tf->user_no_alphabet) {
+		tf->use_alphabet = 0;
+		tf->use_ualphabet = 0;
+	}
+
 void
 DESTROY (tf)
 	Text::Fuzzy tf;
@@ -111,4 +143,3 @@ CODE:
         TEXT_FUZZY (scan_file (tf, file_name, & RETVAL));
 OUTPUT:
         RETVAL
-

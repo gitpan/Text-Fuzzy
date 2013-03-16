@@ -1,6 +1,6 @@
 #include <string.h>
 #include <stdio.h>
-/* For INT_MAX */
+/* For INT_MAX/INT_MIN */
 #include <limits.h>
 #include "text-fuzzy.h"
 #include "edit-distance-char.h"
@@ -8,11 +8,16 @@
 int distance_char (const unsigned char * word1,
                     int len1,
                     text_fuzzy_t * tf)
+
 {
     /* Pull the values from "tf". */
 
     const unsigned char * word2 = (const unsigned char *) tf->text.text;
     int len2 = tf->text.length;
+
+
+    /* Matrix is the dynamic programming matrix. We economize on space
+       by having only two columns. */
 
     int matrix[2][len2 + 1];
     int i;

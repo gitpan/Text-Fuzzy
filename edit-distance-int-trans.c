@@ -1,9 +1,11 @@
+#line 2 "edit-distance.c.tmpl"
 #include <string.h>
 #include <stdio.h>
 /* For INT_MAX/INT_MIN */
 #include <limits.h>
 #include "text-fuzzy.h"
 #include "edit-distance-int-trans.h"
+#line 10 "edit-distance.c.tmpl"
 
 /* For malloc. */
 
@@ -79,18 +81,21 @@ static int min (int a, int b)
 }
 
 
-
-int distance_int_trans (const unsigned int * word1,
-                    int len1,
+#line 1 "declaration"
+int distance_int_trans (
                     text_fuzzy_t * tf)
 
 {
-#line 85 "edit-distance.c.tmpl"
+#line 90 "edit-distance.c.tmpl"
 
+#line 92 "edit-distance.c.tmpl"
+    const unsigned int * word1 = (const unsigned int *) tf->b.unicode;
+    int len1 = tf->b.ulength;
     const unsigned int * word2 = (const unsigned int *) tf->text.unicode;
     int len2 = tf->text.ulength;
 
-#line 96 "edit-distance.c.tmpl"
+#line 108 "edit-distance.c.tmpl"
+
 
     /* keep track of dictionary linked list position */
 
@@ -136,6 +141,7 @@ int distance_int_trans (const unsigned int * word1,
 	    }
 
 	    targetCharCount = find (head, word2[j-1])->value;
+
 	    swapScore = matrix[targetCharCount][swapCount] + i - targetCharCount - 1 + j - swapCount;
 	    
 	    if(word1[i-1] != word2[j-1]){      
@@ -147,14 +153,6 @@ int distance_int_trans (const unsigned int * word1,
 	    } 
 	}
 	
-	/* We will return a huge value here if the */
-	/* current score > maxDistance   */
-	if(tf->max_distance != 0 && tf->max_distance < matrix[i+1][len2+1]) {
-	    dict_free(head);
-	    return INT_MAX / 0x1000;
-	}
-	
-	
 	find (head, word1[i-1])->value = i;
     }
 
@@ -162,5 +160,6 @@ int distance_int_trans (const unsigned int * word1,
 
     return matrix[len1 + 1][len2 + 1];
 
+#line 308 "edit-distance.c.tmpl"
 }
 

@@ -1,5 +1,7 @@
 #define NO_MAX_DISTANCE -1
 
+/* Get memory via Perl. */
+
 #define get_memory(value, number, what) {                       \
         Newxz (value, number, what);                            \
         if (! value) {                                          \
@@ -21,11 +23,57 @@ int perl_error_handler (const char * file_name, int line_number,
     return 0;
 }
 
-static int * sv_to_int_ptr (SV * text, int * ulength_ptr)
+#define SMALL 0x1000
+#define HUGEBUGGY (SMALL * SMALL)
+
+/* Decide what length to make "text_fuzzy->b.unicode". It has to be
+   bigger than "minimum". */
+
+static void fake_length (text_fuzzy_t * text_fuzzy, int minimum)
+{
+    int r = SMALL;
+ again:
+    if (minimum < r) {
+	text_fuzzy->b_unicode_length = r;
+	return;
+    }
+    r *= 2;
+    if (r > HUGEBUGGY) {
+	croak ("String length %d longer than maximum allowed for, %d.\n",
+	       minimum, HUGEBUGGY);
+    }
+    goto again;
+}
+
+/* Allocate the memory for b. */
+
+static void allocate_b_unicode (text_fuzzy_t * text_fuzzy, int b_length)
+{
+
+    if (! text_fuzzy->b.unicode) {
+
+	/* We have not allocated any memory yet. */
+
+	fake_length (text_fuzzy, b_length);
+	get_memory (text_fuzzy->b.unicode,
+		    text_fuzzy->b_unicode_length, int);
+    }
+    else if (b_length > text_fuzzy->b_unicode_length) {
+
+	/* "b" is bigger than what we allowed for. */
+
+	fake_length (text_fuzzy, b_length);
+	Renew (text_fuzzy->b.unicode, text_fuzzy->b_unicode_length, int);
+    }
+}
+
+/* Given a Perl string in "text" which is marked as being Unicode
+   characters, use the Perl stuff to turn it into a string of
+   integers. */
+
+static void sv_to_int_ptr (SV * text, text_fuzzy_string_t * tfs)
 {
     int i;
-    int ulength;
-    int * unicode;
     U8 * utf;
     STRLEN curlen;
     STRLEN length;
@@ -33,21 +81,19 @@ static int * sv_to_int_ptr (SV * text, int * ulength_ptr)
 
     stuff = (unsigned char *) SvPV (text, length);
 
-    ulength = sv_len_utf8 (text);
-    Newxz (unicode, ulength, int);
-    if (! unicode) {
-        croak ("%s:%d: %s", __FILE__, __LINE__, "Error allocating");
-    }
     utf = stuff;
     curlen = length;
-    for (i = 0; i < ulength; i++) {
+    for (i = 0; i < tfs->ulength; i++) {
         STRLEN len;
-        unicode[i] = utf8n_to_uvuni (utf, curlen, & len, 0);
+
+	/* The documentation for "utf8n_to_uvuni" can be found in
+	   "perldoc perlapi". There is an online version here:
+	   "http://perldoc.perl.org/perlapi.html#Unicode-Support". */
+
+        tfs->unicode[i] = utf8n_to_uvuni (utf, curlen, & len, 0);
         curlen -= len;
         utf += len;
     }
-    * ulength_ptr = ulength;
-    return unicode;
 }
 
 /* Convert a Perl SV into the text_fuzzy_t structure. */
@@ -62,8 +108,11 @@ sv_to_text_fuzzy (SV * text, int max_distance,
     int i;
     int is_utf8;
 
+    /* Allocate memory for "text_fuzzy". */
     get_memory (text_fuzzy, 1, text_fuzzy_t);
     text_fuzzy->max_distance = max_distance;
+
+    /* Copy the string in "text" into "text_fuzzy". */
     stuff = (unsigned char *) SvPV (text, length);
     text_fuzzy->text.length = length;
     get_memory (text_fuzzy->text.text, length + 1, char);
@@ -73,13 +122,20 @@ sv_to_text_fuzzy (SV * text, int max_distance,
     text_fuzzy->text.text[text_fuzzy->text.length] = '\0';
     is_utf8 = SvUTF8 (text);
     if (is_utf8) {
+
+	/* Put the Unicode version of the string into
+	   "text_fuzzy->text". */
+
         text_fuzzy->unicode = 1;
-        text_fuzzy->text.unicode =
-            sv_to_int_ptr (text,
-                           & text_fuzzy->text.ulength);
-        text_fuzzy->n_mallocs++;
+	text_fuzzy->text.ulength = sv_len_utf8 (text);
+
+	get_memory (text_fuzzy->text.unicode, text_fuzzy->text.ulength, int);
+
+	sv_to_int_ptr (text, & text_fuzzy->text);
+
+	/* Generate the Unicode alphabet. */
+
 	TEXT_FUZZY (generate_ualphabet (text_fuzzy));
-	//text_fuzzy->ualphabet.valid = 0;
     }
     else {
 	TEXT_FUZZY (generate_alphabet (text_fuzzy));
@@ -87,51 +143,33 @@ sv_to_text_fuzzy (SV * text, int max_distance,
     * text_fuzzy_ptr = text_fuzzy;
 }
 
-static void text_fuzzy_free (text_fuzzy_t * text_fuzzy)
-{
-    if (text_fuzzy->ualphabet.alphabet) {
-	free (text_fuzzy->ualphabet.alphabet);
-	text_fuzzy->n_mallocs--;
-    }
-
-    if (text_fuzzy->unicode) {
-        Safefree (text_fuzzy->text.unicode);
-        text_fuzzy->n_mallocs--;
-    }
-
-    Safefree (text_fuzzy->text.text);
-    text_fuzzy->n_mallocs--;
-
-    if (text_fuzzy->n_mallocs != 1) {
-        warn ("memory leak: n_mallocs %d != 1", text_fuzzy->n_mallocs);
-    }
-    Safefree (text_fuzzy);
-}
+/* The following palaver is related to the macros "FAIL" and
+   "FAIL_MSG" in "text-fuzzy.c.in". */
 
 #undef FAIL_STATUS
 #define FAIL_STATUS -1
 
 static void
-sv_to_text_fuzzy_string (SV * word, text_fuzzy_string_t * b,
-                         int force_unicode)
+sv_to_text_fuzzy_string (SV * word, text_fuzzy_t * tf)
 {
     STRLEN length;
-    b->text = SvPV (word, length);
-    b->length = length;
-    if (SvUTF8 (word) || force_unicode) {
-        b->unicode = sv_to_int_ptr (word, & b->ulength);
+    tf->b.text = SvPV (word, length);
+    tf->b.length = length;
+    if (SvUTF8 (word) || tf->unicode) {
+
+	/* Make a Unicode version of b. */
+
+	tf->b.ulength = sv_len_utf8 (word);
+	allocate_b_unicode (tf, tf->b.ulength);
+	sv_to_int_ptr (word, & tf->b);
     }
 }
 
 static int
 text_fuzzy_sv_distance (text_fuzzy_t * tf, SV * word)
 {
-    text_fuzzy_string_t b = {0};
-    sv_to_text_fuzzy_string (word, & b, tf->unicode);
-    TEXT_FUZZY (compare_single (tf, & b));
-    if (b.unicode) {
-        Safefree (b.unicode);
-    }
+    sv_to_text_fuzzy_string (word, tf);
+    TEXT_FUZZY (compare_single (tf));
     if (tf->found) {
         return tf->distance;
     }
@@ -141,15 +179,18 @@ text_fuzzy_sv_distance (text_fuzzy_t * tf, SV * word)
 }
 
 static int
-text_fuzzy_av_distance (text_fuzzy_t * tf, AV * words, int * distance_ptr)
+text_fuzzy_av_distance (text_fuzzy_t * tf, AV * words)
 {
     int i;
     int n_words;
     int max_distance_holder;
     int nearest;
 
+    tf->distance = -1;
     max_distance_holder = tf->max_distance;
     nearest = -1;
+    tf->ualphabet.rejections = 0;
+    tf->length_rejections = 0;
 
     /* If the maximum distance is set to a value larger than the
        number of characters in the string, set the maximum distance to
@@ -163,11 +204,6 @@ text_fuzzy_av_distance (text_fuzzy_t * tf, AV * words, int * distance_ptr)
 #endif
 	    tf->max_distance = tf->text.ulength;
 	}
-#ifdef DEBUG
-	else {
-	    fprintf (stderr, "boo to a goose\n");
-	}
-#endif
     }
     else {
 	if (tf->max_distance > tf->text.length) {
@@ -181,10 +217,9 @@ text_fuzzy_av_distance (text_fuzzy_t * tf, AV * words, int * distance_ptr)
     }
     for (i = 0; i < n_words; i++) {
         SV * word;
-        text_fuzzy_string_t b;
         word = * av_fetch (words, i, 0);
-        sv_to_text_fuzzy_string (word, & b, tf->unicode);
-        TEXT_FUZZY (compare_single (tf, & b));
+        sv_to_text_fuzzy_string (word, tf);
+        TEXT_FUZZY (compare_single (tf));
         if (tf->found) {
             tf->max_distance = tf->distance;
             nearest = i;
@@ -194,12 +229,43 @@ text_fuzzy_av_distance (text_fuzzy_t * tf, AV * words, int * distance_ptr)
             }
         }
     }
-    * distance_ptr = tf->max_distance;
+    tf->distance = tf->max_distance;
     /* Set the maximum distance back to the user's value. */
     tf->max_distance = max_distance_holder;
 #ifdef DEBUG
     fprintf (stderr, "Rejected using alphabet: %d\n", tf->ualphabet.rejected);
 #endif
     return nearest;
+}
+
+/* Free the memory allocated to "text_fuzzy" and check that there has
+   not been a memory leak. */
+
+static int text_fuzzy_free (text_fuzzy_t * text_fuzzy)
+{
+    if (text_fuzzy->b.unicode) {
+	Safefree (text_fuzzy->b.unicode);
+	text_fuzzy->n_mallocs--;
+    }
+
+    /* See the comments in "text-fuzzy.c.in" about why this is
+       necessary. */
+
+    TEXT_FUZZY (free_memory (text_fuzzy));
+
+    if (text_fuzzy->unicode) {
+        Safefree (text_fuzzy->text.unicode);
+        text_fuzzy->n_mallocs--;
+    }
+
+    Safefree (text_fuzzy->text.text);
+    text_fuzzy->n_mallocs--;
+
+    if (text_fuzzy->n_mallocs != 1) {
+        warn ("memory leak: n_mallocs %d != 1", text_fuzzy->n_mallocs);
+    }
+    Safefree (text_fuzzy);
+
+    return 0;
 }
 

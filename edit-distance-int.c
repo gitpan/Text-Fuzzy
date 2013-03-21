@@ -1,20 +1,26 @@
+#line 2 "edit-distance.c.tmpl"
 #include <string.h>
 #include <stdio.h>
 /* For INT_MAX/INT_MIN */
 #include <limits.h>
 #include "text-fuzzy.h"
 #include "edit-distance-int.h"
-
-int distance_int (const unsigned int * word1,
-                    int len1,
+#line 1 "declaration"
+int distance_int (
                     text_fuzzy_t * tf)
 
 {
-    /* Pull the values from "tf". */
+#line 90 "edit-distance.c.tmpl"
 
+#line 92 "edit-distance.c.tmpl"
+    const unsigned int * word1 = (const unsigned int *) tf->b.unicode;
+    int len1 = tf->b.ulength;
     const unsigned int * word2 = (const unsigned int *) tf->text.unicode;
     int len2 = tf->text.ulength;
 
+#line 108 "edit-distance.c.tmpl"
+
+#line 176 "edit-distance.c.tmpl"
 
     /* Matrix is the dynamic programming matrix. We economize on space
        by having only two columns. */
@@ -23,9 +29,11 @@ int distance_int (const unsigned int * word1,
     int i;
     int j;
     int large_value;
+#line 186 "edit-distance.c.tmpl"
     int max;
 
     max = tf->max_distance;
+#line 191 "edit-distance.c.tmpl"
 
     /*
       Initialize the 0 row of "matrix".
@@ -141,5 +149,6 @@ int distance_int (const unsigned int * word1,
         }
     }
     return matrix[len1 % 2][len2];
+#line 308 "edit-distance.c.tmpl"
 }
 

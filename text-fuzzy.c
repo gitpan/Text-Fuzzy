@@ -260,6 +260,9 @@ typedef struct text_fuzzy {
 
     /* Is this Unicode? */
     int unicode : 1;
+
+    /* Do we want to skip exact matches? */
+    int no_exact : 1;
 }
 text_fuzzy_t;
 
@@ -596,9 +599,17 @@ FUNC (compare_single) (text_fuzzy_t * tf)
 	    d = distance_char (tf);
 	}
     }
-    if (d != NOT_FOUND && d < tf->max_distance) {
-        tf->found = 1;
-        tf->distance = d;
+    if (d != NOT_FOUND && d <= tf->max_distance) {
+	if (tf->no_exact) {
+
+	    /* Skip exact matches. */
+
+	    if (d == 0) {
+		OK;
+	    }
+	}
+	tf->found = 1;
+	tf->distance = d;
     }
     OK;
 }

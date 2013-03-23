@@ -71,8 +71,41 @@ distance away from the word, C<$index> is -1.
 
 Use L</set_max_distance> to alter the maximum distance used.
 
-If there is more than one word with the same distance in C<@words>,
-this returns the first of them.
+If there is more than one word with the same edit distance in
+C<@words>, this returns the last one found, unless it is an exact
+match, in which case it returns the first one found. To get all matches, call it in array context:
+
+    my @nearest = $tf->nearest (\@words);
+
+If there are no matches within minimum distance, it returns an empty
+list. If there is one or more match, it returns the array offset of
+it, not the value itself.
+
+    
+    use Text::Fuzzy;
+    
+    my @funky_words = qw/
+    nice
+    funky
+    rice
+    gibbon
+    lice
+    graham
+    garden
+    /;
+    
+    my $tf = Text::Fuzzy->new ('dice');
+    
+    my @nearest = $tf->nearest (\@funky_words);
+    
+    print "The nearest words are ";
+    print join ", ", (map {$funky_words[$_]} @nearest);
+    printf ", distance %d.\n", $tf->last_distance ();
+    
+    # Prints out "The nearest words are nice, rice, lice."
+    
+    
+
 
 =head2 last_distance
 
@@ -127,6 +160,42 @@ transpositions:
 
     $tf->transpositions_ok (0);
 
+=head2 no_exact
+
+    $tf->no_exact (1);
+
+Use this to make L</nearest> ignore exact matches. For example,
+
+    
+    use Text::Fuzzy;
+    
+    my @words = qw/bibbity bobbity boo/;
+    for my $word (@words) {
+        my $tf = Text::Fuzzy->new ($word);
+        $tf->no_exact (0);
+        my $nearest = $tf->nearest (\@words);
+        if ($nearest >= 0) {
+    	print "With exact, nearest to $word is $words[$nearest]\n";
+        }
+        # Make "$word" not match itself.
+        $tf->no_exact (1);
+        my $nearest = $tf->nearest (\@words);
+        if ($nearest >= 0) {
+    	print "Without exact, nearest to $word is $words[$nearest]\n";
+        }
+    }
+
+
+This prints
+
+    With exact, nearest to bibbity is bibbity
+    Without exact, nearest to bibbity is bobbity
+    With exact, nearest to bobbity is bobbity
+    Without exact, nearest to bobbity is bibbity
+    With exact, nearest to boo is boo
+    Without exact, nearest to boo is bobbity
+
+
 =head1 EXAMPLES
 
 =head2 misspelt-web-page.cgi
@@ -136,18 +205,15 @@ script which does something similar to the Apache mod_speling module,
 offering spelling corrections for mistyped URLs and sending the user
 to a correct page.
 
-    #!/home/ben/software/install/bin/perl
-    use warnings;
-    use strict;
+    
     use Text::Fuzzy;
     
     # The directory of files served by the web server.
     
     my $web_root = '/usr/local/www/data';
     
-    # If the query is something like
-    # "http://www.sljfaq.org/afaq/infults.html", the value of $path_info
-    # is "afaq/infults.html".
+    # If the query is "http://www.example.com/abc/xyz.html", $path_info is
+    # "abc/xyz.html".
     
     my $path_info = $ENV{REQUEST_URI};
     
@@ -249,9 +315,7 @@ dictionary of words specified by a command-line option "-d":
 It prints out any words which look like spelling mistakes, using the
 dictionary.
 
-    #!/home/ben/software/install/bin/perl
-    use warnings;
-    use strict;
+    
     use Getopt::Long;
     use Text::Fuzzy;
     use Lingua::EN::PluralToSingular 'to_singular';
@@ -333,12 +397,9 @@ and does some fuzzy searches on them. It requires a local copy of the
 file to run. This script demonstrates the use of Unicode searches with
 Text::Fuzzy.
 
-    #!/home/ben/software/install/bin/perl
-    use warnings;
-    use strict;
+    
     use Lingua::JA::Moji ':all';
     use Text::Fuzzy;
-    use utf8;
     binmode STDOUT, ":utf8";
     my $infile = '/home/ben/data/edrdg/edict';
     open my $in, "<:encoding(EUC-JP)", $infile or die $!;

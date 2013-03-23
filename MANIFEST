@@ -10,7 +10,10 @@ edit-distance-int.c
 edit-distance-int.h
 examples/extract-kana.pl
 examples/kanji-search.pl
+examples/list-context.pl
 examples/misspelt-web-page.cgi
+examples/no-exact-out.txt
+examples/no-exact.pl
 examples/spell-check.pl
 Fuzzy.xs
 lib/Text/Fuzzy.pm
@@ -19,7 +22,9 @@ Makefile.PL
 MANIFEST			This list of files
 MANIFEST.SKIP
 t/compatibility.t
+t/fuzzy-index.t
 t/private-functions.t
+t/return-array.t
 t/Text-Fuzzy.t
 t/trans.t
 t/unicode-alphabet.t

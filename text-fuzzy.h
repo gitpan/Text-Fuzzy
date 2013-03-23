@@ -177,16 +177,19 @@ typedef struct text_fuzzy {
 
     /* Is this Unicode? */
     int unicode : 1;
+
+    /* Do we want to skip exact matches? */
+    int no_exact : 1;
 }
 text_fuzzy_t;
-#line 142 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 145 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_generate_ualphabet (text_fuzzy_t * tf);
-#line 325 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 328 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_compare_single (text_fuzzy_t * tf);
-#line 478 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 489 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_generate_alphabet (text_fuzzy_t * text_fuzzy);
-#line 590 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 601 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_scan_file (text_fuzzy_t * text_fuzzy, char * file_name, char ** nearest_ptr);
-#line 645 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 656 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_free_memory (text_fuzzy_t * text_fuzzy);
 #endif /* TEXT_FUZZY_H */

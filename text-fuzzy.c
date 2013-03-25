@@ -120,6 +120,7 @@ const char * text_fuzzy_statuses[] = {
     "There was an attempt to make a Unicode alphabet on a non-Unicode string.",
     "max min miscalculation",
     "A string for comparison was larger than the value of HUGE defined in the code.",
+    "An attempt was made to use the maximum edit distance which was unset.",
 };
 
 #define STATIC static
@@ -160,6 +161,11 @@ End:
    "C::Maker" to start writing "text-fuzzy.h". */
 
 #ifdef HEADER
+
+/* If tf->max_distance is set to this value, no maximum distance is
+   used. */
+
+#define NO_MAX_DISTANCE -1
 
 /* Alphabet over unicode characters. */
 
@@ -218,6 +224,10 @@ typedef struct text_fuzzy {
     /* The maximum edit distance we allow for. */
     int max_distance;
 
+    /* The maximum edit distance the user will allow. We are going to
+       cheat and ignore the user's value. */
+    int max_distance_holder;
+
     /* The number of mallocs we are guilty of. */
     int n_mallocs;
 
@@ -241,28 +251,31 @@ typedef struct text_fuzzy {
 
     /* Does the user want to use an alphabet filter? Default is yes,
        so this must be set to a non-zero value to switch off use. */
-    int user_no_alphabet : 1;
+    unsigned int user_no_alphabet : 1;
 
     /* Are we actually going to use it? (This may be false even if the
        user wants to use it, for silly cases, but is not true if the
        user does not want to use it.) */
-    int use_alphabet : 1;
-    int use_ualphabet : 1;
+    unsigned int use_alphabet : 1;
+    unsigned int use_ualphabet : 1;
 
     /* Variable edit costs? (currently unused) */
-    int variable_edit_costs : 1;
+    unsigned int variable_edit_costs : 1;
 
     /* Do we account for transpositions? */
-    int transpositions_ok : 1;
+    unsigned int transpositions_ok : 1;
 
     /* Did we find it? */
-    int found : 1;
+    unsigned int found : 1;
 
     /* Is this Unicode? */
-    int unicode : 1;
+    unsigned int unicode : 1;
 
     /* Do we want to skip exact matches? */
-    int no_exact : 1;
+    unsigned int no_exact : 1;
+
+    /* Are we scanning a list of entries? */
+    unsigned int scanning : 1;
 }
 text_fuzzy_t;
 
@@ -401,6 +414,8 @@ static int ualphabet_miss (text_fuzzy_t * tf, text_fuzzy_string_t * b)
 
     int misses;
 
+    FAIL (tf->max_distance == NO_MAX_DISTANCE, max_distance_misuse);
+
     u = & tf->ualphabet;
 
     misses = 0;
@@ -480,7 +495,7 @@ FUNC (compare_single) (text_fuzzy_t * tf)
 
     if (tf->unicode) {
 
-	if (tf->max_distance >= 0) {
+	if (tf->max_distance != NO_MAX_DISTANCE) {
 
 	    /* Filter on distance: If the distance in the length of
 	       the strings is greater than the max distance, give up,
@@ -546,7 +561,7 @@ FUNC (compare_single) (text_fuzzy_t * tf)
 
 	/* This is not Unicode. */
 
-        if (tf->max_distance >= 0) {
+        if (tf->max_distance != NO_MAX_DISTANCE) {
 
             /* If the distance in the length of the strings is greater
                than the max distance, give up. */
@@ -599,7 +614,14 @@ FUNC (compare_single) (text_fuzzy_t * tf)
 	    d = distance_char (tf);
 	}
     }
-    if (d != NOT_FOUND && d <= tf->max_distance) {
+
+    /* If we have found something, and either it is less than or equal
+       to the maximum distance allowed, or we are not checking for
+       maximum distance, then record this distance and switch on the
+       "found" flag, "tf->found". */
+
+    if (d != NOT_FOUND && (tf->max_distance == NO_MAX_DISTANCE ||
+			   d <= tf->max_distance)) {
 	if (tf->no_exact) {
 
 	    /* Skip exact matches. */
@@ -610,6 +632,9 @@ FUNC (compare_single) (text_fuzzy_t * tf)
 	}
 	tf->found = 1;
 	tf->distance = d;
+	if (tf->scanning) {
+	    tf->max_distance = tf->distance;
+	}
     }
     OK;
 }
@@ -647,6 +672,42 @@ FUNC (generate_alphabet) (text_fuzzy_t * text_fuzzy)
     if (unique_characters > max_unique_characters) {
         text_fuzzy->use_alphabet = 0;
     }
+    OK;
+}
+
+FUNC (begin_scanning) (text_fuzzy_t * text_fuzzy)
+{
+    /* Even if the user does not want to set a maximum distance, set
+       one anyway so that we can reject stuff without going into the
+       dynamic programming algorithm. Keep the user's value in
+       "text_fuzzy->max_distance_holder". */
+    
+    text_fuzzy->max_distance_holder = text_fuzzy->max_distance;
+
+    if (text_fuzzy->max_distance == NO_MAX_DISTANCE) {
+	/* Use INT_MAX / 2 here because INT_MAX + 1 = INT_MIN, causing
+	   hard-to-find bugs. */
+	text_fuzzy->max_distance = INT_MAX / 2;
+    }
+    text_fuzzy->scanning = 1;
+
+    /* Set per-scan variables. */
+
+    text_fuzzy->distance = -1;
+    text_fuzzy->ualphabet.rejections = 0;
+    text_fuzzy->length_rejections = 0;
+
+    OK;
+}
+
+/* Put the user's desired maximum distance back into the object for
+   the next search. */
+
+FUNC (end_scanning) (text_fuzzy_t * text_fuzzy)
+{
+    text_fuzzy->max_distance = text_fuzzy->max_distance_holder;
+    text_fuzzy->scanning = 0;
+
     OK;
 }
 
@@ -748,12 +809,11 @@ FUNC (scan_file) (text_fuzzy_t * text_fuzzy, char * file_name,
     fuzzy_file_t ff = {0};
     char * nearest;
     int found;
-    int max_distance_holder;
 
     CALL (open (& ff, file_name));
 
-    max_distance_holder = text_fuzzy->max_distance;
-    
+    CALL (begin_scanning (text_fuzzy));
+
     found = 0;
     nearest = 0;
     while (1) {
@@ -762,18 +822,15 @@ FUNC (scan_file) (text_fuzzy_t * text_fuzzy, char * file_name,
         CALL (compare_single (text_fuzzy));
         if (text_fuzzy->found) {
             found = 1;
-            if (text_fuzzy->distance < text_fuzzy->max_distance) {
-                text_fuzzy->max_distance = text_fuzzy->distance;
-                if (! nearest) {
-                    nearest = malloc (ff.b.length + 1);
-                }
-                else {
-                    nearest = realloc (nearest, ff.b.length + 1);
-                }
-                FAIL (! nearest, memory_error);
-                strncpy (nearest, ff.b.text, ff.b.length);
-                nearest[ff.b.length] = '\0';
-            }
+	    if (! nearest) {
+		nearest = malloc (ff.b.length + 1);
+	    }
+	    else {
+		nearest = realloc (nearest, ff.b.length + 1);
+	    }
+	    FAIL (! nearest, memory_error);
+	    strncpy (nearest, ff.b.text, ff.b.length);
+	    nearest[ff.b.length] = '\0';
         }
         if (ff.eof && ff.remaining == 0) {
             break;
@@ -782,7 +839,8 @@ FUNC (scan_file) (text_fuzzy_t * text_fuzzy, char * file_name,
 
     CALL (close (& ff));
 
-    text_fuzzy->max_distance = max_distance_holder;
+    CALL (end_scanning (text_fuzzy));
+
     if (found) {
         * nearest_ptr = nearest;
     }
@@ -825,6 +883,11 @@ status: max_min_miscalculation
 status: string_too_long
 %%description:
 A string for comparison was larger than the value of HUGE defined in the code.
+%%
+
+status: max_distance_misuse
+%%description:
+An attempt was made to use the maximum edit distance which was unset.
 %%
 
 */

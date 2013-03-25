@@ -88,13 +88,14 @@ int distance_int_trans (
 {
 #line 90 "edit-distance.c.tmpl"
 
-#line 92 "edit-distance.c.tmpl"
+
+
+
+#line 101 "edit-distance.c.tmpl"
     const unsigned int * word1 = (const unsigned int *) tf->b.unicode;
     int len1 = tf->b.ulength;
     const unsigned int * word2 = (const unsigned int *) tf->text.unicode;
     int len2 = tf->text.ulength;
-
-#line 108 "edit-distance.c.tmpl"
 
 
     /* keep track of dictionary linked list position */
@@ -160,6 +161,6 @@ int distance_int_trans (
 
     return matrix[len1 + 1][len2 + 1];
 
-#line 308 "edit-distance.c.tmpl"
+#line 305 "edit-distance.c.tmpl"
 }
 

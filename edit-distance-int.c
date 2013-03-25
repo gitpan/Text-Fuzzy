@@ -12,15 +12,16 @@ int distance_int (
 {
 #line 90 "edit-distance.c.tmpl"
 
-#line 92 "edit-distance.c.tmpl"
+
+
+
+#line 101 "edit-distance.c.tmpl"
     const unsigned int * word1 = (const unsigned int *) tf->b.unicode;
     int len1 = tf->b.ulength;
     const unsigned int * word2 = (const unsigned int *) tf->text.unicode;
     int len2 = tf->text.ulength;
 
-#line 108 "edit-distance.c.tmpl"
-
-#line 176 "edit-distance.c.tmpl"
+#line 173 "edit-distance.c.tmpl"
 
     /* Matrix is the dynamic programming matrix. We economize on space
        by having only two columns. */
@@ -29,11 +30,11 @@ int distance_int (
     int i;
     int j;
     int large_value;
-#line 186 "edit-distance.c.tmpl"
+#line 183 "edit-distance.c.tmpl"
     int max;
 
     max = tf->max_distance;
-#line 191 "edit-distance.c.tmpl"
+#line 188 "edit-distance.c.tmpl"
 
     /*
       Initialize the 0 row of "matrix".
@@ -45,7 +46,7 @@ int distance_int (
 
      */
 
-    if (max >= 0) {
+    if (max != NO_MAX_DISTANCE) {
         large_value = max + 1;
     }
     else {
@@ -78,7 +79,7 @@ int distance_int (
         c1 = word1[i-1];
         min_j = 1;
         max_j = len2;
-        if (max >= 0) {
+        if (max != NO_MAX_DISTANCE) {
             if (i > max) {
                 min_j = i - max;
             }
@@ -139,7 +140,7 @@ int distance_int (
                 col_min = matrix[next][j];
             }
         }
-        if (max >= 0) {
+        if (max != NO_MAX_DISTANCE) {
             if (col_min > max) {
                 /* All the elements of the ith column are greater than the
                    maximum, so no match less than or equal to max can be
@@ -149,6 +150,6 @@ int distance_int (
         }
     }
     return matrix[len1 % 2][len2];
-#line 308 "edit-distance.c.tmpl"
+#line 305 "edit-distance.c.tmpl"
 }
 

@@ -1,8 +1,7 @@
-#define PERL_NO_GET_CONTEXT
-#define NO_XSLOCKS
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
+#include "ppport.h"
 
 #define FAIL_STATUS
 #define ERROR_HANDLER perl_error_handler
@@ -19,21 +18,64 @@ MODULE=Text::Fuzzy PACKAGE=Text::Fuzzy
 
 PROTOTYPES: ENABLE
 
-Text::Fuzzy
-new (class, search_term, max_distance = 10)
-	const char * class;
-	SV * search_term;
-	int max_distance;
-CODE:
+BOOT:
 	/* Set the error handler in "text-fuzzy.c" to be the error
 	   handler defined in "text-fuzzy-perl.c". */
+
 	text_fuzzy_error_handler = perl_error_handler;
 
-	sv_to_text_fuzzy (search_term, max_distance, & RETVAL);
 
-        if (! RETVAL) {
+Text::Fuzzy
+new (class, search_term, ...)
+	const char * class;
+	SV * search_term;
+CODE:
+	int i;
+	text_fuzzy_t * r;
+
+	r = 0;
+
+	sv_to_text_fuzzy (search_term, & r);
+
+        if (! r) {
         	croak ("error making %s.\n", class);
 	}
+
+	/* Loop over the parameters in "...". The first two terms are
+	   "class" and "search_term", so we start from 2 here. */
+
+	for (i = 2; i < items; i++) {
+		SV * x;
+		char * p;
+		unsigned int len;
+
+		if (i >= items - 1) {
+			warn ("Odd number of parameters %d of %d",
+			      i, (int) items);
+			break;
+		}
+
+		/* Read in parameters in the "form max => 22",
+		"no_exact => 1", etc. */
+
+		x = ST (i);
+		p = (char *) SvPV (x, len);
+		if (strncmp (p, "max", strlen ("max")) == 0) {
+			r->max_distance = SvIV (ST (i + 1));
+		}
+		else if (strncmp (p, "no_exact", strlen ("no_exact")) == 0) {
+			r->no_exact = SvTRUE (ST (i + 1)) ? 1 : 0;
+		}
+		else if (strncmp (p, "trans", strlen ("trans")) == 0) {
+			r->transpositions_ok = SvTRUE (ST (i + 1)) ? 1 : 0;
+		}
+		else {
+			warn ("Unknown parameter %s", p);
+		}
+		/* Plan to throw one away; you will anyway. */
+		i++;
+	}
+	RETVAL = r;
 OUTPUT:
         RETVAL
 
@@ -92,6 +134,7 @@ CODE:
 OUTPUT:
 	RETVAL
 
+
 void
 nearest (tf, words)
 	Text::Fuzzy tf;
@@ -104,22 +147,35 @@ PPCODE:
 	wantarray = 0;
 
 	if (GIMME_V == G_ARRAY) {
+
+	   	/* The user wants an array containing all of the
+	   	nearest values. */
+
 		wantarray = newAV ();
 		n = text_fuzzy_av_distance (tf, words, wantarray);
 	}
 	else {
+		/* Even in void context, we still do the search, in
+		   case the user just wants to know the minimum
+		   distance and ignores the actual values. */
+
 		n = text_fuzzy_av_distance (tf, words, 0);
 	}
-	/* We could check for void context and return here I suppose ... */
+
 	if (wantarray) {
+		SV * e;
 		EXTEND (SP, av_len (wantarray));
 		for (i = 0; i <= av_len (wantarray); i++) {
-			PUSHs (sv_2mortal (*(av_fetch (wantarray, i, 0))));
+			e = * av_fetch (wantarray, i, 0);
+			SvREFCNT_inc_simple_void_NN (e);
+			PUSHs (sv_2mortal (e));
 		}
+		av_undef (wantarray);
         }
         else {
-            PUSHs (sv_2mortal (newSViv (n)));
+            	PUSHs (sv_2mortal (newSViv (n)));
         }
+
 
 int
 last_distance (tf)
@@ -128,6 +184,7 @@ CODE:
 	RETVAL = tf->distance;
 OUTPUT:
 	RETVAL
+
 
 SV *
 unicode_length (tf)
@@ -154,6 +211,7 @@ CODE:
 		tf->use_ualphabet = 0;
 	}
 
+
 int
 ualphabet_rejections (tf)
 	Text::Fuzzy tf;
@@ -172,12 +230,6 @@ OUTPUT:
         RETVAL
 
 
-void
-DESTROY (tf)
-	Text::Fuzzy tf;
-CODE:
-	text_fuzzy_free (tf);
-
 char *
 scan_file (tf, file_name)
 	Text::Fuzzy tf;
@@ -187,9 +239,18 @@ CODE:
 OUTPUT:
         RETVAL
 
+
 void
 no_exact (tf, yes_no)
 	Text::Fuzzy tf;
 	SV * yes_no;
 CODE:
 	tf->no_exact = SvTRUE (yes_no);
+
+
+void
+DESTROY (tf)
+	Text::Fuzzy tf;
+CODE:
+	text_fuzzy_free (tf);
+

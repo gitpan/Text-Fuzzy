@@ -74,9 +74,15 @@ typedef enum {
     text_fuzzy_status_ualphabet_on_non_unicode,
     text_fuzzy_status_max_min_miscalculation,
     text_fuzzy_status_string_too_long,
+    text_fuzzy_status_max_distance_misuse,
 }
 text_fuzzy_status_t;
 
+
+/* If tf->max_distance is set to this value, no maximum distance is
+   used. */
+
+#define NO_MAX_DISTANCE -1
 
 /* Alphabet over unicode characters. */
 
@@ -135,6 +141,10 @@ typedef struct text_fuzzy {
     /* The maximum edit distance we allow for. */
     int max_distance;
 
+    /* The maximum edit distance the user will allow. We are going to
+       cheat and ignore the user's value. */
+    int max_distance_holder;
+
     /* The number of mallocs we are guilty of. */
     int n_mallocs;
 
@@ -158,38 +168,45 @@ typedef struct text_fuzzy {
 
     /* Does the user want to use an alphabet filter? Default is yes,
        so this must be set to a non-zero value to switch off use. */
-    int user_no_alphabet : 1;
+    unsigned int user_no_alphabet : 1;
 
     /* Are we actually going to use it? (This may be false even if the
        user wants to use it, for silly cases, but is not true if the
        user does not want to use it.) */
-    int use_alphabet : 1;
-    int use_ualphabet : 1;
+    unsigned int use_alphabet : 1;
+    unsigned int use_ualphabet : 1;
 
     /* Variable edit costs? (currently unused) */
-    int variable_edit_costs : 1;
+    unsigned int variable_edit_costs : 1;
 
     /* Do we account for transpositions? */
-    int transpositions_ok : 1;
+    unsigned int transpositions_ok : 1;
 
     /* Did we find it? */
-    int found : 1;
+    unsigned int found : 1;
 
     /* Is this Unicode? */
-    int unicode : 1;
+    unsigned int unicode : 1;
 
     /* Do we want to skip exact matches? */
-    int no_exact : 1;
+    unsigned int no_exact : 1;
+
+    /* Are we scanning a list of entries? */
+    unsigned int scanning : 1;
 }
 text_fuzzy_t;
-#line 145 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 157 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_generate_ualphabet (text_fuzzy_t * tf);
-#line 328 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 342 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_compare_single (text_fuzzy_t * tf);
-#line 489 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 513 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_generate_alphabet (text_fuzzy_t * text_fuzzy);
-#line 601 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 542 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+text_fuzzy_status_t text_fuzzy_begin_scanning (text_fuzzy_t * text_fuzzy);
+#line 566 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+text_fuzzy_status_t text_fuzzy_end_scanning (text_fuzzy_t * text_fuzzy);
+#line 660 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_scan_file (text_fuzzy_t * text_fuzzy, char * file_name, char ** nearest_ptr);
-#line 656 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 713 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_free_memory (text_fuzzy_t * text_fuzzy);
 #endif /* TEXT_FUZZY_H */

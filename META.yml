@@ -21,4 +21,4 @@ requires: {}
 resources:
   bugtracker: https://github.com/benkasminbullock/Text-Fuzzy/issues
   repository: https://github.com/benkasminbullock/Text-Fuzzy
-version: 0.10_03
+version: 0.10_04

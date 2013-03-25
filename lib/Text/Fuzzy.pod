@@ -49,6 +49,39 @@ selected using the method L</transpositions_ok>.
 
 Create a new Text::Fuzzy object from the supplied word.
 
+The following parameters may be supplied:
+
+=over
+
+=item max
+
+    my $tf = Text::Fuzzy->new ('Cinderella', max => 3);
+
+This sets the maximum edit distance, in the same way as
+L</set_max_distance>.
+
+    my $tf = Text::Fuzzy->new ('Cinderella');
+    $tf->set_max_distance (3);
+
+=item no_exact
+
+    my $tf = Text::Fuzzy->new ('slipper', no_exact => 1);
+
+This switches on rejection of exact matches, in the same way as
+L</no_exact>:
+
+    my $tf = Text::Fuzzy->new ('slipper');
+    $tf->no_exact (1);
+
+=item trans
+
+    my $tf = Text::Fuzzy->new ('glass', trans => 1);
+
+This switches on transpositions, in the same way as
+L</transpositions_ok>.
+
+=back
+
 =head2 distance
 
     my $dist = $tf->distance ($word);
@@ -121,13 +154,17 @@ match.
     $tf->set_max_distance (3);
 
 Set the maximum edit distance of C<$tf>. The default maximum distance
-is 10. Set the maximum distance to a low value to improve the speed
-of searches over lists with L</nearest>, or to reject unlikely
+is 10. Set the maximum distance to a low value to improve the speed of
+searches over lists with L</nearest>, or to reject unlikely
 matches. When searching for a near match, anything with an edit
-distance of a value at least as high as the maximum is rejected
-without computing the exact distance. To compute exact distances, call
-this method with zero or undefined, the maximum edit distance is
-switched off, and whatever the nearest match is is accepted.
+distance of a value over the maximum is rejected without computing the
+exact distance. To compute exact distances, call this method without
+an argument:
+
+    $tf->set_max_distance ();
+
+The maximum edit distance is switched off, and whatever the nearest
+match is is accepted.
 
 =head2 get_max_distance
 
@@ -139,13 +176,13 @@ maximum distance may be set with L</set_max_distance>.
 
 =head2 scan_file
 
-    $tf->scan_file ('/usr/share/dict/words');
+    my $nearest = $tf->scan_file ('/usr/share/dict/words');
 
 Scan a file to find the nearest match to the word used in
 L</new>. This assumes that the file contains lines of text separated
-by newlines and finds the closest match in the file.
-
-This does not currently support Unicode-encoded files.
+by newlines, and finds the closest match in the file. Its return value
+is a string rather than a line number. It cannot return an array of
+values. It does not currently support Unicode-encoded files.
 
 =head2 transpositions_ok
 
@@ -195,6 +232,24 @@ This prints
     With exact, nearest to boo is boo
     Without exact, nearest to boo is bobbity
 
+
+=head1 FUNCTIONS
+
+=head2 fuzzy_index
+
+    my ($distance, $edits) = fuzzy_index ('piece', 'peace', 1);
+
+This returns the distance between the two arguments, and the edits
+necessary to transform the first one into the second one. C<$Edits> is
+a string containing the four letters I<k>, I<r>, I<d>, and I<i>, for
+"keep", "replace", "delete", and "insert" respectively. For example,
+for "piece" and "peace", C<$edits> contains "krrkk" for "keep,
+replace, replace, keep, keep".
+
+This does not handle transpositions.
+
+The third argument should be set to 1, otherwise it does a fuzzy
+search rather than calculating the distance.
 
 =head1 EXAMPLES
 

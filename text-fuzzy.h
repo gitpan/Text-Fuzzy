@@ -79,11 +79,6 @@ typedef enum {
 text_fuzzy_status_t;
 
 
-/* If tf->max_distance is set to this value, no maximum distance is
-   used. */
-
-#define NO_MAX_DISTANCE -1
-
 /* Alphabet over unicode characters. */
 
 typedef struct ualphabet {
@@ -166,6 +161,9 @@ typedef struct text_fuzzy {
        difference is bigger than the maximum edit distance. */
     int length_rejections;
 
+    /* A character which is not in use. */
+    unsigned char invalid_char;
+
     /* Does the user want to use an alphabet filter? Default is yes,
        so this must be set to a non-zero value to switch off use. */
     unsigned int user_no_alphabet : 1;
@@ -195,18 +193,18 @@ typedef struct text_fuzzy {
     unsigned int scanning : 1;
 }
 text_fuzzy_t;
-#line 157 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 152 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_generate_ualphabet (text_fuzzy_t * tf);
-#line 342 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 337 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_compare_single (text_fuzzy_t * tf);
-#line 513 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 508 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_generate_alphabet (text_fuzzy_t * text_fuzzy);
-#line 542 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 546 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_begin_scanning (text_fuzzy_t * text_fuzzy);
-#line 566 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 570 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_end_scanning (text_fuzzy_t * text_fuzzy);
-#line 660 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 664 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_scan_file (text_fuzzy_t * text_fuzzy, char * file_name, char ** nearest_ptr);
-#line 713 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 717 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_free_memory (text_fuzzy_t * text_fuzzy);
 #endif /* TEXT_FUZZY_H */

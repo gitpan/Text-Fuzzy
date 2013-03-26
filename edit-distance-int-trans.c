@@ -3,9 +3,10 @@
 #include <stdio.h>
 /* For INT_MAX/INT_MIN */
 #include <limits.h>
+#include "config.h"
 #include "text-fuzzy.h"
 #include "edit-distance-int-trans.h"
-#line 10 "edit-distance.c.tmpl"
+#line 11 "edit-distance.c.tmpl"
 
 /* For malloc. */
 
@@ -86,12 +87,12 @@ int distance_int_trans (
                     text_fuzzy_t * tf)
 
 {
-#line 90 "edit-distance.c.tmpl"
+#line 91 "edit-distance.c.tmpl"
 
 
 
 
-#line 101 "edit-distance.c.tmpl"
+#line 102 "edit-distance.c.tmpl"
     const unsigned int * word1 = (const unsigned int *) tf->b.unicode;
     int len1 = tf->b.ulength;
     const unsigned int * word2 = (const unsigned int *) tf->text.unicode;
@@ -161,6 +162,6 @@ int distance_int_trans (
 
     return matrix[len1 + 1][len2 + 1];
 
-#line 305 "edit-distance.c.tmpl"
+#line 306 "edit-distance.c.tmpl"
 }
 

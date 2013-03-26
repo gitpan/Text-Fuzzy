@@ -6,6 +6,7 @@ Text::Fuzzy - partial or fuzzy string matching using edit distances
 
 =head1 SYNOPSIS
 
+    
     use Text::Fuzzy;
     my $tf = Text::Fuzzy->new ('boboon');
     print "Distance is ", $tf->distance ('babboon'), "\n";
@@ -14,32 +15,30 @@ Text::Fuzzy - partial or fuzzy string matching using edit distances
     my $nearest = $tf->nearest (\@words);
     print "Nearest array entry is ", $words[$nearest], "\n";
     # Prints "Nearest array entry is brown"
+    
+
 
 =head1 DESCRIPTION
 
-This module calculates the Levenshtein edit distance between words,
-and does edit-distance-based searching of arrays and files to find the
-nearest entry. It can handle either byte strings or character strings
-(strings containing Unicode), treating each Unicode character as a
-single entity.
+This module calculates edit distances between words, and searches
+arrays and files to find the nearest entry by edit distance. It
+handles both byte strings and character strings (strings containing
+Unicode), treating each Unicode character as a single entity.
 
-It is designed for high performance in searching for the nearest to a
-particular search term over an array of words or a file, by reducing
-the number of calculations which needs to be performed.
-
-It supports either bytewise edit distances or Unicode-based edit distances:
-
+    
+    use Text::Fuzzy;
     use utf8;
     my $tf = Text::Fuzzy->new ('あいうえお☺');
     print $tf->distance ('うえお☺'), "\n";
     # prints "2".
+    
 
-The default edit distance is the Levenshtein edit distance, which
-applies an equal weight of one to additions (C<cat> -> C<cart>),
-substitutions (C<cat> -> C<cut>), and deletions (C<carp> ->
-C<cap>). Optionally, the Damerau-Levenshtein edit distance, which
-additionally allows transpositions (C<salt> -> C<slat>) may be
-selected using the method L</transpositions_ok>.
+
+The default is the Levenshtein edit distance, which applies an equal
+weight of one to additions (C<cat> -> C<cart>), substitutions (C<cat>
+-> C<cut>), and deletions (C<carp> -> C<cap>). The Damerau-Levenshtein
+edit distance, which allows transpositions (C<salt> -> C<slat>) may
+also be selected.
 
 =head1 METHODS
 
@@ -57,7 +56,7 @@ The following parameters may be supplied:
 
     my $tf = Text::Fuzzy->new ('Cinderella', max => 3);
 
-This sets the maximum edit distance, in the same way as
+This sets the maximum edit distance allowed, in the same way as
 L</set_max_distance>.
 
     my $tf = Text::Fuzzy->new ('Cinderella');
@@ -86,8 +85,25 @@ L</transpositions_ok>.
 
     my $dist = $tf->distance ($word);
 
-Return the edit distance to C<$word> from the word used to create the
-object in L</new>.
+The return value is the edit distance to C<$word> from the word used
+to create the object in L</new>.
+
+    
+    use Text::Fuzzy;
+    my $cat = Text::Fuzzy->new ('cat');
+    print $cat->distance ('cut'), "\n";
+    # Prints 1
+    print $cat->distance ('cart'), "\n";
+    # Prints 1
+    print $cat->distance ('catamaran'), "\n";
+    # Prints 6
+    use utf8;
+    print $cat->distance ('γάτος'), "\n";
+    # Prints 5
+
+
+To know which edits are used to convert the words, use
+L</distance_edits>.
 
 =head2 nearest
 
@@ -117,18 +133,8 @@ it, not the value itself.
     
     use Text::Fuzzy;
     
-    my @funky_words = qw/
-    nice
-    funky
-    rice
-    gibbon
-    lice
-    graham
-    garden
-    /;
-    
+    my @funky_words = qw/nice funky rice gibbon lice graeme garden/;
     my $tf = Text::Fuzzy->new ('dice');
-    
     my @nearest = $tf->nearest (\@funky_words);
     
     print "The nearest words are ";
@@ -153,36 +159,38 @@ match.
     # Set the max distance.
     $tf->set_max_distance (3);
 
-Set the maximum edit distance of C<$tf>. The default maximum distance
-is 10. Set the maximum distance to a low value to improve the speed of
-searches over lists with L</nearest>, or to reject unlikely
-matches. When searching for a near match, anything with an edit
-distance of a value over the maximum is rejected without computing the
-exact distance. To compute exact distances, call this method without
-an argument:
+Set the maximum edit distance of C<$tf>. Set the maximum distance to a
+low value to improve the speed of searches over lists with
+L</nearest>, or to reject unlikely matches. When searching for a near
+match, anything with an edit distance of a value over the maximum is
+rejected without computing the exact distance. To compute exact
+distances, call this method without an argument:
 
     $tf->set_max_distance ();
 
 The maximum edit distance is switched off, and whatever the nearest
 match is is accepted.
 
+The default is to switch off the maximum distance.
+
+    
+    use Text::Fuzzy;
+    my $tf = Text::Fuzzy->new ('nopqrstuvwxyz');
+    # Prints 13, the correct value.
+    print $tf->distance ('abcdefghijklm'), "\n";
+    $tf->set_max_distance (10);
+    # Prints 11, one more than the maximum distance, because the search
+    # stopped when the distance was exceeded.
+    print $tf->distance ('abcdefghijklm'), "\n";
+
+
 =head2 get_max_distance
 
     # Get the maximum edit distance.
     print "The max distance is ", $tf->get_max_distance (), "\n";
 
-Get the maximum edit distance of C<$tf>. The default is set to 10. The
-maximum distance may be set with L</set_max_distance>.
-
-=head2 scan_file
-
-    my $nearest = $tf->scan_file ('/usr/share/dict/words');
-
-Scan a file to find the nearest match to the word used in
-L</new>. This assumes that the file contains lines of text separated
-by newlines, and finds the closest match in the file. Its return value
-is a string rather than a line number. It cannot return an array of
-values. It does not currently support Unicode-encoded files.
+Get the maximum edit distance of C<$tf>. The maximum distance may be
+set with L</set_max_distance>.
 
 =head2 transpositions_ok
 
@@ -201,7 +209,8 @@ transpositions:
 
     $tf->no_exact (1);
 
-Use this to make L</nearest> ignore exact matches. For example,
+This is a flag to L</nearest> which makes it ignore exact matches. For
+example,
 
     
     use Text::Fuzzy;
@@ -212,13 +221,13 @@ Use this to make L</nearest> ignore exact matches. For example,
         $tf->no_exact (0);
         my $nearest = $tf->nearest (\@words);
         if ($nearest >= 0) {
-    	print "With exact, nearest to $word is $words[$nearest]\n";
+            print "With exact, nearest to $word is $words[$nearest]\n";
         }
         # Make "$word" not match itself.
         $tf->no_exact (1);
         my $nearest = $tf->nearest (\@words);
         if ($nearest >= 0) {
-    	print "Without exact, nearest to $word is $words[$nearest]\n";
+            print "Without exact, nearest to $word is $words[$nearest]\n";
         }
     }
 
@@ -233,23 +242,33 @@ This prints
     Without exact, nearest to boo is bobbity
 
 
+This is for the case of searching over an array which contains the
+searched-for item itself.
+
+=head2 scan_file
+
+    my $nearest = $tf->scan_file ('/usr/share/dict/words');
+
+Scan a file to find the nearest match to the word used in
+L</new>. This assumes that the file contains lines of text separated
+by newlines, and finds the closest match in the file. Its return value
+is a string rather than a line number. It cannot return an array of
+values. It does not currently support Unicode-encoded files.
+
 =head1 FUNCTIONS
 
-=head2 fuzzy_index
+=head2 distance_edits
 
-    my ($distance, $edits) = fuzzy_index ('piece', 'peace', 1);
+    my ($distance, $edits) = distance_edits ('piece', 'peace');
 
-This returns the distance between the two arguments, and the edits
-necessary to transform the first one into the second one. C<$Edits> is
-a string containing the four letters I<k>, I<r>, I<d>, and I<i>, for
-"keep", "replace", "delete", and "insert" respectively. For example,
-for "piece" and "peace", C<$edits> contains "krrkk" for "keep,
-replace, replace, keep, keep".
+This returns the edit distance between the two arguments, and the
+edits necessary to transform the first one into the second
+one. C<$Edits> is a string containing the four letters I<k>, I<r>,
+I<d>, and I<i>, for "keep", "replace", "delete", and "insert"
+respectively. For example, for "piece" and "peace", C<$edits> contains
+"krrkk" for "keep, replace, replace, keep, keep".
 
 This does not handle transpositions.
-
-The third argument should be set to 1, otherwise it does a fuzzy
-search rather than calculating the distance.
 
 =head1 EXAMPLES
 
@@ -455,6 +474,7 @@ Text::Fuzzy.
     
     use Lingua::JA::Moji ':all';
     use Text::Fuzzy;
+    use utf8;
     binmode STDOUT, ":utf8";
     my $infile = '/home/ben/data/edrdg/edict';
     open my $in, "<:encoding(EUC-JP)", $infile or die $!;
@@ -462,14 +482,14 @@ Text::Fuzzy.
     while (<$in>) {
         my $kana;
         if (/\[(\p{InKana}+)\]/) {
-    	$kana = $1;
+            $kana = $1;
         }
         elsif (/^(\p{InKana}+)/) {
-    	$kana = $1;
+            $kana = $1;
         }
         if ($kana) {
-    	$kana = kana2katakana ($kana);
-    	push @kana, $kana;
+            $kana = kana2katakana ($kana);
+            push @kana, $kana;
         }
     }
     printf "Starting fuzzy searches over %d lines.\n", scalar @kana;
@@ -483,15 +503,15 @@ Text::Fuzzy.
     sub search
     {
         my ($silly) = @_;
-        my $search = Text::Fuzzy->new ($silly);
+        my $search = Text::Fuzzy->new ($silly, max => 10);
         my $n = $search->nearest (\@kana);
         if ($n >= 0) {
-    	printf "$silly nearest is $kana[$n] (distance %d)\n",
-    	    $search->last_distance ();
+            printf "$silly nearest is $kana[$n] (distance %d)\n",
+                $search->last_distance ();
         }
         else {
-    	printf "Nothing like '$silly' was found within the edit distance %d.\n",
-    	    $search->get_max_distance ();
+            printf "Nothing like '$silly' was found within the edit distance %d.\n",
+                $search->get_max_distance ();
         }
     }
     
@@ -518,8 +538,9 @@ L<http://code.activestate.com/ppm/Text-Fuzzy/>.
 
 =head1 PRIVATE METHODS
 
-These methods are not expected to be useful for the general user. They
-may be useful in benchmarking the module and checking its correctness.
+The general user should not need any of these methods. They are not
+expected to be useful for the general user. They may be useful in
+benchmarking the module and checking its correctness.
 
 =head2 no_alphabet
 

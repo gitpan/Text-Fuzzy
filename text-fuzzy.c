@@ -1,6 +1,7 @@
 #include <string.h>
 #include <errno.h>
 #include <limits.h>
+#include "config.h"
 #include "text-fuzzy.h"
 #include "edit-distance-char-trans.h"
 #include "edit-distance-int-trans.h"
@@ -149,6 +150,7 @@ End:
 
 
 
+
 /* All of the following are automatically generated from
    "edit-distance.h.tmpl" by "make-edit-distance-c.pl". */
 
@@ -161,11 +163,6 @@ End:
    "C::Maker" to start writing "text-fuzzy.h". */
 
 #ifdef HEADER
-
-/* If tf->max_distance is set to this value, no maximum distance is
-   used. */
-
-#define NO_MAX_DISTANCE -1
 
 /* Alphabet over unicode characters. */
 
@@ -249,6 +246,9 @@ typedef struct text_fuzzy {
        difference is bigger than the maximum edit distance. */
     int length_rejections;
 
+    /* A character which is not in use. */
+    unsigned char invalid_char;
+
     /* Does the user want to use an alphabet filter? Default is yes,
        so this must be set to a non-zero value to switch off use. */
     unsigned int user_no_alphabet : 1;
@@ -280,10 +280,6 @@ typedef struct text_fuzzy {
 text_fuzzy_t;
 
 #endif /* HEADER */
-
-/* The maximum feasible size of the Unicode alphabet. */
-
-#define UALPHABET_MAX_SIZE 0x10000
 
 /* The following calculations need to be done twice, first when
    creating the alphabet and second when looking up a new character in
@@ -671,6 +667,15 @@ FUNC (generate_alphabet) (text_fuzzy_t * text_fuzzy)
     }
     if (unique_characters > max_unique_characters) {
         text_fuzzy->use_alphabet = 0;
+    }
+    /* Find an unused slot. This is for the case where the string to
+       match is not in Unicode, but the string which it is matched
+       against is in Unicode. */
+    for (i = 1; i < 0x100; i++) {
+	if (text_fuzzy->alphabet[i] == 0) {
+	    text_fuzzy->invalid_char = i;
+	    break;
+	}
     }
     OK;
 }

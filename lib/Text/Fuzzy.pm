@@ -11,7 +11,7 @@ require DynaLoader;
 
 use warnings;
 use strict;
-our $VERSION = "0.10_04";
+our $VERSION = "0.10_05";
 
 __PACKAGE__->bootstrap ($VERSION);
 
@@ -28,6 +28,11 @@ sub dl_load_flags
 # is a boolean. If true it switches on
 
 my $verbose = undef;
+
+sub distance_edits
+{
+    return fuzzy_index (@_, 1);
+}
 
 sub fuzzy_index
 {

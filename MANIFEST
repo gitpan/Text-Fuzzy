@@ -1,4 +1,6 @@
 Changes
+config
+config.h
 declaration
 edit-distance-char-trans.c
 edit-distance-char-trans.h
@@ -8,13 +10,17 @@ edit-distance-int-trans.c
 edit-distance-int-trans.h
 edit-distance-int.c
 edit-distance-int.h
+examples/distance.pl
 examples/extract-kana.pl
 examples/kanji-search.pl
 examples/list-context.pl
+examples/max-dist.pl
 examples/misspelt-web-page.cgi
 examples/no-exact-out.txt
 examples/no-exact.pl
 examples/spell-check.pl
+examples/synopsis.pl
+examples/unicode.pl
 Fuzzy.xs
 lib/Text/Fuzzy.pm
 lib/Text/Fuzzy.pod
@@ -31,6 +37,7 @@ t/Text-Fuzzy.t
 t/trans.t
 t/unicode-alphabet.t
 t/unicode-nearest.t
+t/unicode-no-unicode.t
 text-fuzzy-perl.c
 text-fuzzy.c
 text-fuzzy.h

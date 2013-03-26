@@ -33,7 +33,6 @@ int perl_error_handler (const char * file_name, int line_number,
 }
 
 #define SMALL 0x1000
-#define HUGEBUGGY (SMALL * SMALL)
 
 /* Decide how many ints to allocate for "text_fuzzy->b.unicode". It
    has to be bigger than "minimum", the actual length of the
@@ -49,12 +48,12 @@ static void fake_length (text_fuzzy_t * text_fuzzy, int minimum)
 	return;
     }
     r *= 2;
-    if (r > HUGEBUGGY) {
+    if (r > STRING_MAX_CHARS) {
 
 	/* Stupid value. */
 
 	croak ("String length %d longer than maximum allowed for, %d.\n",
-	       minimum, HUGEBUGGY);
+	       minimum, STRING_MAX_CHARS);
     }
     goto again;
 }
@@ -113,11 +112,6 @@ static void sv_to_int_ptr (SV * text, text_fuzzy_string_t * tfs)
     }
 }
 
-/* This is the default maximum distance which we use if the user does
-   not specify one. */
-
-#define DEFAULT_MAX_DISTANCE 10
-
 /* Convert a Perl SV into the text_fuzzy_t structure. */
 
 static void
@@ -131,7 +125,7 @@ sv_to_text_fuzzy (SV * text, text_fuzzy_t ** text_fuzzy_ptr)
 
     /* Allocate memory for "text_fuzzy". */
     get_memory (text_fuzzy, 1, text_fuzzy_t);
-    text_fuzzy->max_distance = DEFAULT_MAX_DISTANCE;
+    text_fuzzy->max_distance = NO_MAX_DISTANCE;
 
     /* Copy the string in "text" into "text_fuzzy". */
     stuff = (unsigned char *) SvPV (text, length);
@@ -183,6 +177,27 @@ sv_to_text_fuzzy_string (SV * word, text_fuzzy_t * tf)
 	tf->b.ulength = sv_len_utf8 (word);
 	allocate_b_unicode (tf, tf->b.ulength);
 	sv_to_int_ptr (word, & tf->b);
+	if (! tf->unicode) {
+
+	    /* Make a non-Unicode version of b. */
+
+	    int i;
+
+	    tf->b.length = tf->b.ulength;
+	    for (i = 0; i < tf->b.ulength; i++) {
+		int c;
+
+		c = tf->b.unicode[i];
+		if (c <= 0x80) {
+		    tf->b.text[i] = c;
+		}
+		else {
+		    /* Put a non-matching character in there. */
+
+		    tf->b.text[i] = tf->invalid_char;
+		}
+	    }
+	}
     }
 }
 

@@ -3,14 +3,13 @@
 #include <stdio.h>
 /* For INT_MAX/INT_MIN */
 #include <limits.h>
+/* For malloc. */
+#include <stdlib.h>
 #include "config.h"
 #include "text-fuzzy.h"
 #include "edit-distance-int-trans.h"
-#line 11 "edit-distance.c.tmpl"
+#line 13 "edit-distance.c.tmpl"
 
-/* For malloc. */
-
-#include <stdlib.h>
 
 /* Our unsorted dictionary linked list.       */
 
@@ -87,12 +86,12 @@ int distance_int_trans (
                     text_fuzzy_t * tf)
 
 {
-#line 91 "edit-distance.c.tmpl"
+#line 90 "edit-distance.c.tmpl"
 
 
 
 
-#line 102 "edit-distance.c.tmpl"
+#line 101 "edit-distance.c.tmpl"
     const unsigned int * word1 = (const unsigned int *) tf->b.unicode;
     int len1 = tf->b.ulength;
     const unsigned int * word2 = (const unsigned int *) tf->text.unicode;
@@ -104,8 +103,20 @@ int distance_int_trans (
     item *head = NULL;
 
     unsigned int swapScore,targetCharCount,i;
-    unsigned int matrix[len1 + 2][len2 + 2];
     unsigned int score_ceil = len1 + len2;
+#ifdef __GNUC__
+    unsigned int matrix[len1 + 2][len2 + 2];
+#else
+    unsigned int ** matrix;
+    int d;
+#endif
+
+#ifndef __GNUC__
+    matrix = calloc (len1 + 2, sizeof (unsigned int *));
+    for (i = 0; i < len1 + 2; i++) {
+	matrix[i] = calloc (len2 + 2, sizeof (unsigned int));
+    }
+#endif
 
     if (len1 == 0) {
 	return len2;
@@ -160,8 +171,23 @@ int distance_int_trans (
 
     dict_free (head);
 
+#ifdef __GNUC__
+
     return matrix[len1 + 1][len2 + 1];
 
-#line 306 "edit-distance.c.tmpl"
+#else
+
+    d = matrix[len1 + 1][len2 + 1];
+
+    for (i = 0; i < len1 + 2; i++) {
+	free (matrix[i]);
+    }
+    free (matrix);
+
+    return d;
+
+#endif
+
+#line 359 "edit-distance.c.tmpl"
 }
 

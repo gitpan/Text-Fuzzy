@@ -34,7 +34,7 @@
          "requires" : {}
       }
    },
-   "release_status" : "stable",
+   "release_status" : "testing",
    "resources" : {
       "bugtracker" : {
          "web" : "https://github.com/benkasminbullock/Text-Fuzzy/issues"
@@ -43,5 +43,5 @@
          "url" : "https://github.com/benkasminbullock/Text-Fuzzy"
       }
    },
-   "version" : "0.11"
+   "version" : "0.11_01"
 }

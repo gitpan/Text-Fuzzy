@@ -42,6 +42,8 @@ t/unicode-no-unicode.t
 text-fuzzy-perl.c
 text-fuzzy.c
 text-fuzzy.h
+tf/text-fuzzy.c
+tf/text-fuzzy.h
 typemap
 xt/usr-words.t
 META.yml                                 Module YAML meta-data (added by MakeMaker)

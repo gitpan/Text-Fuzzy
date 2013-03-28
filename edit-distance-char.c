@@ -3,6 +3,8 @@
 #include <stdio.h>
 /* For INT_MAX/INT_MIN */
 #include <limits.h>
+/* For malloc. */
+#include <stdlib.h>
 #include "config.h"
 #include "text-fuzzy.h"
 #include "edit-distance-char.h"
@@ -11,31 +13,44 @@ int distance_char (
                     text_fuzzy_t * tf)
 
 {
-#line 91 "edit-distance.c.tmpl"
+#line 90 "edit-distance.c.tmpl"
 
 
 
 
-#line 102 "edit-distance.c.tmpl"
+#line 101 "edit-distance.c.tmpl"
     const unsigned char * word1 = (const unsigned char *) tf->b.text;
     int len1 = tf->b.length;
     const unsigned char * word2 = (const unsigned char *) tf->text.text;
     int len2 = tf->text.length;
 
-#line 174 "edit-distance.c.tmpl"
+#line 200 "edit-distance.c.tmpl"
 
     /* Matrix is the dynamic programming matrix. We economize on space
        by having only two columns. */
 
+#ifdef __GNUC__
     int matrix[2][len2 + 1];
+#else
+    int ** matrix;
+    int d;
+#endif
     int i;
     int j;
     int large_value;
-#line 184 "edit-distance.c.tmpl"
+
+#line 216 "edit-distance.c.tmpl"
     int max;
 
     max = tf->max_distance;
-#line 189 "edit-distance.c.tmpl"
+#line 221 "edit-distance.c.tmpl"
+
+#ifndef __GNUC__
+    matrix = calloc (2, sizeof (int *));
+    for (i = 0; i < 2; i++) {
+	matrix[i] = calloc (len2 + 1, sizeof (int));
+    }
+#endif
 
     /*
       Initialize the 0 row of "matrix".
@@ -150,7 +165,21 @@ int distance_char (
             }
         }
     }
+#ifdef __GNUC__
+
     return matrix[len1 % 2][len2];
-#line 306 "edit-distance.c.tmpl"
+
+#else
+    d = matrix[len1 % 2][len2];
+
+    for (i = 0; i < 2; i++) {
+	free (matrix[i]);
+    }
+    free (matrix);
+
+    return d;
+
+#endif
+#line 359 "edit-distance.c.tmpl"
 }
 

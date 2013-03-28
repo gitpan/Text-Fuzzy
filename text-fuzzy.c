@@ -74,6 +74,8 @@ error_handler_t text_fuzzy_error_handler =
 
 /* Fail a test, with message. */
 
+#ifdef __GNUC__
+
 #define FAIL_MSG(condition, status, msg, args...)                       \
     if (condition) {                                                    \
         LINE_ERROR (condition, status);                                 \
@@ -84,6 +86,20 @@ error_handler_t text_fuzzy_error_handler =
         }                                                               \
         return text_fuzzy_status_ ## status;                      \
     }
+
+#else /* __GNUC__ */
+
+#define FAIL_MSG fail_msg
+
+static inline void fail_msg (int condition, int status, char * msg, ...)
+{
+    if (condition) {
+	fprintf (stderr, "%d:%s", status, msg);
+	exit (1);
+    }
+}
+
+#endif /* __GNUC__ */
 
 #define OK return text_fuzzy_status_ok;
 
@@ -230,6 +246,10 @@ typedef struct text_fuzzy {
 
     /* ASCII alphabet */
     int alphabet[0x100];
+
+    /* The number of characters which were rejected using the ASCII
+       alphabet. */
+    int alphabet_rejections;
 
     /* Unicode alphabet. */
     ualphabet_t ualphabet;
@@ -593,6 +613,7 @@ FUNC (compare_single) (text_fuzzy_t * tf)
 				   are within the maximum edit distance of
 				   each other. */
 
+				tf->alphabet_rejections++;
 				OK;
 			    }
 			}
@@ -700,6 +721,7 @@ FUNC (begin_scanning) (text_fuzzy_t * text_fuzzy)
 
     text_fuzzy->distance = -1;
     text_fuzzy->ualphabet.rejections = 0;
+    text_fuzzy->alphabet_rejections = 0;
     text_fuzzy->length_rejections = 0;
 
     OK;
@@ -852,6 +874,12 @@ FUNC (scan_file) (text_fuzzy_t * text_fuzzy, char * file_name,
     else {
         * nearest_ptr = 0;
     }
+    OK;
+}
+
+FUNC (alphabet_rejections) (text_fuzzy_t * text_fuzzy, int * r)
+{
+    * r = text_fuzzy->alphabet_rejections;
     OK;
 }
 

@@ -108,17 +108,36 @@ L</distance_edits>.
 =head2 nearest
 
     my $index = $tf->nearest (\@words);
+    my $nearest_word = $words[$index];
 
 This returns the index of the nearest element in the array to the
-argument to L</new>. If none of the elements are less than the maximum
-distance away from the word, C<$index> is -1.
+argument to L</new>. 
 
-    if ($index >= 0) {
+It is possible to set a maximum edit distance, beyond which entries
+are rejected, using L</set_max_distance> or the C<max> parameter to
+L</new>.  In this case, if B<none> of the elements of C<@words> are
+less than the maximum distance away from the word, C<$index> is the
+undefined value, so when setting a maximum distance, check the return
+value of index using C<defined>.
+
+    
+    use Text::Fuzzy;
+    my $tf = Text::Fuzzy->new ('calamari', max => 1);
+    my @words = qw/Have you ever kissed in the moonlight
+                   In the grand and glorious
+                   Gay notorious
+                   South American Way?/;
+    my $index = $tf->nearest (\@words);
+    if (defined $index) {
         printf "Found at $index, distance was %d.\n",
-            $tf->last_distance ();
+        $tf->last_distance ();
     }
+    else {
+        print "Not found anywhere.\n";
+    }
+    
+    
 
-Use L</set_max_distance> to alter the maximum distance used.
 
 If there is more than one word with the same edit distance in
 C<@words>, this returns the last one found, unless it is an exact
@@ -150,7 +169,7 @@ it, not the value itself.
 
     my $last_distance = $tf->last_distance ();
 
-The distance from the previous match closest match. This is used in
+The distance from the previous match's closest match. This is used in
 conjunction with L</nearest> to find the edit distance to the previous
 match.
 
@@ -184,14 +203,6 @@ The default is to switch off the maximum distance.
     print $tf->distance ('abcdefghijklm'), "\n";
 
 
-=head2 get_max_distance
-
-    # Get the maximum edit distance.
-    print "The max distance is ", $tf->get_max_distance (), "\n";
-
-Get the maximum edit distance of C<$tf>. The maximum distance may be
-set with L</set_max_distance>.
-
 =head2 transpositions_ok
 
     $tf->transpositions_ok (1);
@@ -220,15 +231,11 @@ example,
         my $tf = Text::Fuzzy->new ($word);
         $tf->no_exact (0);
         my $nearest = $tf->nearest (\@words);
-        if ($nearest >= 0) {
-            print "With exact, nearest to $word is $words[$nearest]\n";
-        }
+        print "With exact, nearest to $word is $words[$nearest]\n";
         # Make "$word" not match itself.
         $tf->no_exact (1);
         my $nearest = $tf->nearest (\@words);
-        if ($nearest >= 0) {
-            print "Without exact, nearest to $word is $words[$nearest]\n";
-        }
+        print "Without exact, nearest to $word is $words[$nearest]\n";
     }
 
 
@@ -307,9 +314,9 @@ to a correct page.
     
     my $tf = Text::Fuzzy->new ($path_info);
     
-    my $nearest = $tf->nearest (\@allfiles);
+    my $nearest = $tf->nearest (\@allfiles, max => 5);
     
-    if ($nearest >= 0) {
+    if (defined $nearest) {
         redirect ($allfiles[$nearest]);
     }
     else {
@@ -394,10 +401,18 @@ dictionary.
     use Text::Fuzzy;
     use Lingua::EN::PluralToSingular 'to_singular';
     
+    # The location of the Unix dictionary.
     my $dict = '/usr/share/dict/words';
+    
+    # Default maximum edit distance. Five is quite a big number for a
+    # spelling mistake.
+    my $max = 5;
+    
     GetOptions (
         "dict=s" => \$dict,
+        "max=i" => \$max,
     );
+    
     my @words;
     my %words;
     my $min_length = 4;
@@ -410,8 +425,11 @@ dictionary.
         while (<$input>) {
             my @line = split /[^a-z']+/i, $_;
             for my $word (@line) {
+                # Remove leading/trailing apostrophes.
+                $word =~ s/^'|'$//g;
                 my $clean_word = to_singular (lc $word);
-                if ($words{$clean_word}) {
+                $clean_word =~ s/'s$//;
+                if ($words{$clean_word} || $words{$word}) {
                     # It is in the dictionary.
                     next;
                 }
@@ -427,11 +445,29 @@ dictionary.
                     # This word was already given to the user.
                     next;
                 }
-                my $tf = Text::Fuzzy->new ($clean_word);
+                if ($clean_word =~ /(.*)ed$/ || $clean_word =~ /(.*)ing/) {
+                    my $stem = $1;
+                    if ($words{$stem} || $words{"${stem}e"}) {
+                        # Past/gerund of $stem/${stem}e
+                        next;
+                    }
+                    # Test for doubled end consonants,
+                    # e.g. "submitted"/"submit".
+                    if ($stem =~ /([bcdfghjklmnpqrstvwxz])\1/) {
+                        $stem =~ s/$1$//;
+                        if ($words{$stem}) {
+                            # Past/gerund of $stem/${stem}e
+                            next;
+                        }
+                    }
+                }
+                my $tf = Text::Fuzzy->new ($clean_word, max => $max);
                 my $nearest = $tf->nearest (\@words);
-                if ($nearest >= 0) {
+                # We have set a maximum distance to search for, so we need
+                # to check whether $nearest is defined.
+                if (defined $nearest) {
                     my $correction = $words[$nearest];
-                    print "$file:$.: '$word' may be $correction.\n";
+                    print "$file:$.: '$word' may be '$correction'.\n";
                     $known{$clean_word} = $correction;
                 }
                 else {
@@ -449,12 +485,26 @@ dictionary.
     {
         my ($dict, $words_array, $words_hash) = @_;    
         open my $din, "<", $dict or die "Can't open dictionary $dict: $!";
+        my @words;
         while (<$din>) {
             chomp;
-            push @$words_array, lc $_;
-            $words_hash->{$_} = 1;
+            push @words, $_;
         }
         close $din or die $!;
+        # Apostrophe words
+    
+        my @apo = qw/let's can't I'll he's don't you're I've it's one's
+                     isn't aren't doesn't won't wouldn't we're/;
+    
+        # Irregular past participles.
+        my @pp = qw/became/;
+    
+        push @words, @apo, @pp;
+        for (@words) {
+            push @$words_array, lc $_;
+            $words_hash->{$_} = 1;
+            $words_hash->{lc $_} = 1;
+        }
     }
 
 
@@ -503,15 +553,15 @@ Text::Fuzzy.
     sub search
     {
         my ($silly) = @_;
-        my $search = Text::Fuzzy->new ($silly, max => 10);
+        my $max = 10;
+        my $search = Text::Fuzzy->new ($silly, max => $max);
         my $n = $search->nearest (\@kana);
-        if ($n >= 0) {
+        if (defined $n) {
             printf "$silly nearest is $kana[$n] (distance %d)\n",
                 $search->last_distance ();
         }
         else {
-            printf "Nothing like '$silly' was found within the edit distance %d.\n",
-                $search->get_max_distance ();
+            printf "Nothing like '$silly' was found within $max edits.\n";
         }
     }
     
@@ -595,6 +645,14 @@ After running L</nearest> over an array, this returns the number of
 entries of the array which were rejected because the length difference
 between them and the target string was larger than the maximum
 distance allowed.
+
+=head2 get_max_distance
+
+    # Get the maximum edit distance.
+    print "The max distance is ", $tf->get_max_distance (), "\n";
+
+Get the maximum edit distance of C<$tf>. The maximum distance may be
+set with L</set_max_distance>.
 
 =head1 ACKNOWLEDGEMENTS
 

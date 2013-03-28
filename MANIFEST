@@ -10,6 +10,7 @@ edit-distance-int-trans.c
 edit-distance-int-trans.h
 edit-distance-int.c
 edit-distance-int.h
+examples/check-return.pl
 examples/distance.pl
 examples/extract-kana.pl
 examples/kanji-search.pl

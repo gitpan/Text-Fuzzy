@@ -188,6 +188,6 @@ int distance_char_trans (
 
 #endif
 
-#line 359 "edit-distance.c.tmpl"
+#line 366 "edit-distance.c.tmpl"
 }
 

@@ -91,7 +91,7 @@ error_handler_t text_fuzzy_error_handler =
 
 #define FAIL_MSG fail_msg
 
-static inline void fail_msg (int condition, int status, char * msg, ...)
+static void fail_msg (int condition, int status, char * msg, ...)
 {
     if (condition) {
 	fprintf (stderr, "%d:%s", status, msg);

@@ -32,7 +32,7 @@ int distance_char (
 #ifdef __GNUC__
     int matrix[2][len2 + 1];
 #else
-    int ** matrix;
+    int * matrix[2];
     int d;
 #endif
     int i;
@@ -46,7 +46,6 @@ int distance_char (
 #line 221 "edit-distance.c.tmpl"
 
 #ifndef __GNUC__
-    matrix = calloc (2, sizeof (int *));
     for (i = 0; i < 2; i++) {
 	matrix[i] = calloc (len2 + 1, sizeof (int));
     }
@@ -161,13 +160,12 @@ int distance_char (
                 /* All the elements of the ith column are greater than the
                    maximum, so no match less than or equal to max can be
                    found by looking at succeeding columns. */
-/*  __  __ _____ __  __  ___  ______   __  _     _____    _    _  __
-   |  \/  | ____|  \/  |/ _ \|  _ \ \ / / | |   | ____|  / \  | |/ /
-   | |\/| |  _| | |\/| | | | | |_) \ V /  | |   |  _|   / _ \ | ' / 
-   | |  | | |___| |  | | |_| |  _ < | |   | |___| |___ / ___ \| . \ 
-   |_|  |_|_____|_|  |_|\___/|_| \_\|_|   |_____|_____/_/   \_\_|\_\ */
-                                                                 
 
+#ifndef __GNUC__
+		for (i = 0; i < 2; i++) {
+		    free (matrix[i]);
+		}
+#endif
                 return large_value;
             }
         }
@@ -182,11 +180,10 @@ int distance_char (
     for (i = 0; i < 2; i++) {
 	free (matrix[i]);
     }
-    free (matrix);
 
     return d;
-
 #endif
-#line 366 "edit-distance.c.tmpl"
+
+#line 363 "edit-distance.c.tmpl"
 }
 

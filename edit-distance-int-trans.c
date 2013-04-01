@@ -188,6 +188,6 @@ int distance_int_trans (
 
 #endif
 
-#line 366 "edit-distance.c.tmpl"
+#line 363 "edit-distance.c.tmpl"
 }
 

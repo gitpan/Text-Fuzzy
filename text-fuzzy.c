@@ -143,6 +143,7 @@ const char * text_fuzzy_statuses[] = {
 #define STATIC static
 #define FUNC(name) text_fuzzy_status_t text_fuzzy_ ## name
 
+#ifdef __GNUC__
 #ifdef VERBOSE
 #define MESSAGE(format, args...) {              \
         printf ("%s:%d: ", __FILE__, __LINE__); \
@@ -151,6 +152,10 @@ const char * text_fuzzy_statuses[] = {
 #else /* VERBOSE */
 #define MESSAGE(format, args...)
 #endif /* VERBOSE */
+#else /* __GNUC__ */
+#define MESSAGE empty_message
+static void empty_message (const char * format, ...) { return; }
+#endif /* __GNUC__ */
 
 /* Local variables:
 mode: c

@@ -21,7 +21,15 @@ struct dictionary {
 
 typedef struct dictionary item;
 
-static __inline item * push (unsigned int key, item * curr)
+/* http://ppm4.activestate.com/sun4-solaris-64/5.12/1200/B/BK/BKB/Text-Fuzzy-0.11.d/log-20130328T025706.txt */
+
+#ifdef __GNUC__
+#define INLINE inline
+#else
+#define INLINE 
+#endif
+
+static INLINE item * push (unsigned int key, item * curr)
 {
     item * head;
     head = malloc (sizeof (item));   
@@ -31,7 +39,7 @@ static __inline item * push (unsigned int key, item * curr)
     return head;
 }
 
-static __inline item * find (item * head, unsigned int key)
+static INLINE item * find (item * head, unsigned int key)
 {
     item * iterator = head;
     while (iterator) {
@@ -45,7 +53,7 @@ static __inline item * find (item * head, unsigned int key)
 
 /* find & push in 1 function (sperg optimization) */
 
-static __inline item * uniquePush (item * head, unsigned int key)
+static INLINE item * uniquePush (item * head, unsigned int key)
 {
     item * iterator = head;
 
@@ -72,7 +80,7 @@ static void dict_free (item * head)
     head = NULL;
 }
 
-static int min (int a, int b)
+static int minimum (int a, int b)
 {
     if (a > b) {
 	return b;
@@ -86,12 +94,12 @@ int distance_int_trans (
                     text_fuzzy_t * tf)
 
 {
-#line 90 "edit-distance.c.tmpl"
+#line 98 "edit-distance.c.tmpl"
 
 
 
 
-#line 101 "edit-distance.c.tmpl"
+#line 109 "edit-distance.c.tmpl"
     const unsigned int * word1 = (const unsigned int *) tf->b.unicode;
     int len1 = tf->b.ulength;
     const unsigned int * word2 = (const unsigned int *) tf->text.unicode;
@@ -158,11 +166,11 @@ int distance_int_trans (
 	    swapScore = matrix[targetCharCount][swapCount] + i - targetCharCount - 1 + j - swapCount;
 	    
 	    if(word1[i-1] != word2[j-1]){      
-		matrix[i+1][j + 1] = min(swapScore,(min(matrix[i][j], min(matrix[i+1][j], matrix[i][j + 1])) + 1));
+		matrix[i+1][j + 1] = minimum(swapScore,(minimum(matrix[i][j], minimum(matrix[i+1][j], matrix[i][j + 1])) + 1));
 	    }
 	    else{ 
 		swapCount = j;
-		matrix[i+1][j + 1] = min (matrix[i][j], swapScore);
+		matrix[i+1][j + 1] = minimum (matrix[i][j], swapScore);
 	    } 
 	}
 	
@@ -188,6 +196,6 @@ int distance_int_trans (
 
 #endif
 
-#line 363 "edit-distance.c.tmpl"
+#line 371 "edit-distance.c.tmpl"
 }
 

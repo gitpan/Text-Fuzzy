@@ -101,13 +101,17 @@ set_max_distance (tf, max_distance = &PL_sv_undef)
 	Text::Fuzzy tf;
 	SV * max_distance;
 CODE:
-        if (SvOK (max_distance)) {
-		tf->max_distance = (int) SvIV (max_distance);
-	}
-	else {
-        	tf->max_distance = NO_MAX_DISTANCE;
-	}
+	int max;
 
+	/* Set the maximum distance to "none". */
+
+        tf->max_distance = NO_MAX_DISTANCE;
+        if (SvOK (max_distance)) {
+		max = (int) SvIV (max_distance);
+		if (max >= 0) {
+			tf->max_distance = max;
+		}
+	}
 
 void
 transpositions_ok (tf, trans)

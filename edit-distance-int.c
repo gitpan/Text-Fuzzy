@@ -13,18 +13,18 @@ int distance_int (
                     text_fuzzy_t * tf)
 
 {
-#line 90 "edit-distance.c.tmpl"
+#line 98 "edit-distance.c.tmpl"
 
 
 
 
-#line 101 "edit-distance.c.tmpl"
+#line 109 "edit-distance.c.tmpl"
     const unsigned int * word1 = (const unsigned int *) tf->b.unicode;
     int len1 = tf->b.ulength;
     const unsigned int * word2 = (const unsigned int *) tf->text.unicode;
     int len2 = tf->text.ulength;
 
-#line 200 "edit-distance.c.tmpl"
+#line 208 "edit-distance.c.tmpl"
 
     /* Matrix is the dynamic programming matrix. We economize on space
        by having only two columns. */
@@ -39,11 +39,11 @@ int distance_int (
     int j;
     int large_value;
 
-#line 216 "edit-distance.c.tmpl"
+#line 224 "edit-distance.c.tmpl"
     int max;
 
     max = tf->max_distance;
-#line 221 "edit-distance.c.tmpl"
+#line 229 "edit-distance.c.tmpl"
 
 #ifndef __GNUC__
     for (i = 0; i < 2; i++) {
@@ -184,6 +184,6 @@ int distance_int (
     return d;
 #endif
 
-#line 363 "edit-distance.c.tmpl"
+#line 371 "edit-distance.c.tmpl"
 }
 

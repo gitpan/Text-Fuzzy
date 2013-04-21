@@ -75,6 +75,7 @@ typedef enum {
     text_fuzzy_status_max_min_miscalculation,
     text_fuzzy_status_string_too_long,
     text_fuzzy_status_max_distance_misuse,
+    text_fuzzy_status_miscount,
 }
 text_fuzzy_status_t;
 #ifndef __GNUC__
@@ -88,6 +89,7 @@ static int ualphabet_on_non_unicode = text_fuzzy_status_ualphabet_on_non_unicode
 static int max_min_miscalculation = text_fuzzy_status_max_min_miscalculation;
 static int string_too_long = text_fuzzy_status_string_too_long;
 static int max_distance_misuse = text_fuzzy_status_max_distance_misuse;
+static int miscount = text_fuzzy_status_miscount;
 #endif /* __GNUC__ */
 
 /* Alphabet over unicode characters. */
@@ -130,6 +132,16 @@ typedef struct text_fuzzy_string {
     int ulength;
 }
 text_fuzzy_string_t;
+
+/* Match candidates. */
+
+typedef struct candidate candidate_t;
+
+struct candidate {
+    int distance;
+    int offset;
+    candidate_t * next;
+};
 
 /* The following structure contains one string plus additional
    paraphenalia used in searching for the string, for example the
@@ -179,6 +191,12 @@ typedef struct text_fuzzy {
     /* A character which is not in use. */
     unsigned char invalid_char;
 
+    /* Candidates for an array match. */
+
+    candidate_t first;
+    candidate_t * last;
+    int offset;
+
     /* Does the user want to use an alphabet filter? Default is yes,
        so this must be set to a non-zero value to switch off use. */
     unsigned int user_no_alphabet : 1;
@@ -206,22 +224,29 @@ typedef struct text_fuzzy {
 
     /* Are we scanning a list of entries? */
     unsigned int scanning : 1;
+
+    /* Do we want an array of answers? */
+    unsigned int wantarray : 1;
 }
 text_fuzzy_t;
-#line 156 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 175 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_generate_ualphabet (text_fuzzy_t * tf);
-#line 341 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 360 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_compare_single (text_fuzzy_t * tf);
-#line 513 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 537 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+text_fuzzy_status_t text_fuzzy_get_candidates (text_fuzzy_t * text_fuzzy, int * n_candidates_ptr, int ** candidates_ptr);
+#line 594 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+text_fuzzy_status_t text_fuzzy_free_candidates (text_fuzzy_t * text_fuzzy, int * candidates);
+#line 611 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_generate_alphabet (text_fuzzy_t * text_fuzzy);
-#line 551 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 649 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_begin_scanning (text_fuzzy_t * text_fuzzy);
-#line 576 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 674 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_end_scanning (text_fuzzy_t * text_fuzzy);
-#line 670 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 768 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_scan_file (text_fuzzy_t * text_fuzzy, char * file_name, char ** nearest_ptr);
-#line 716 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 814 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_alphabet_rejections (text_fuzzy_t * text_fuzzy, int * r);
-#line 729 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 827 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_free_memory (text_fuzzy_t * text_fuzzy);
 #endif /* TEXT_FUZZY_H */

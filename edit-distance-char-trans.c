@@ -5,10 +5,11 @@
 #include <limits.h>
 /* For malloc. */
 #include <stdlib.h>
+
 #include "config.h"
 #include "text-fuzzy.h"
 #include "edit-distance-char-trans.h"
-#line 13 "edit-distance.c.tmpl"
+#line 14 "edit-distance.c.tmpl"
 
 
 /* Our unsorted dictionary linked list.       */
@@ -94,12 +95,12 @@ int distance_char_trans (
                     text_fuzzy_t * tf)
 
 {
-#line 98 "edit-distance.c.tmpl"
+#line 99 "edit-distance.c.tmpl"
 
 
 
 
-#line 109 "edit-distance.c.tmpl"
+#line 110 "edit-distance.c.tmpl"
     const unsigned char * word1 = (const unsigned char *) tf->b.text;
     int len1 = tf->b.length;
     const unsigned char * word2 = (const unsigned char *) tf->text.text;
@@ -196,6 +197,6 @@ int distance_char_trans (
 
 #endif
 
-#line 371 "edit-distance.c.tmpl"
+#line 372 "edit-distance.c.tmpl"
 }
 

@@ -5,6 +5,7 @@
 #include <limits.h>
 /* For malloc. */
 #include <stdlib.h>
+
 #include "config.h"
 #include "text-fuzzy.h"
 #include "edit-distance-char.h"
@@ -13,18 +14,18 @@ int distance_char (
                     text_fuzzy_t * tf)
 
 {
-#line 98 "edit-distance.c.tmpl"
+#line 99 "edit-distance.c.tmpl"
 
 
 
 
-#line 109 "edit-distance.c.tmpl"
+#line 110 "edit-distance.c.tmpl"
     const unsigned char * word1 = (const unsigned char *) tf->b.text;
     int len1 = tf->b.length;
     const unsigned char * word2 = (const unsigned char *) tf->text.text;
     int len2 = tf->text.length;
 
-#line 208 "edit-distance.c.tmpl"
+#line 209 "edit-distance.c.tmpl"
 
     /* Matrix is the dynamic programming matrix. We economize on space
        by having only two columns. */
@@ -39,11 +40,11 @@ int distance_char (
     int j;
     int large_value;
 
-#line 224 "edit-distance.c.tmpl"
+#line 225 "edit-distance.c.tmpl"
     int max;
 
     max = tf->max_distance;
-#line 229 "edit-distance.c.tmpl"
+#line 230 "edit-distance.c.tmpl"
 
 #ifndef __GNUC__
     for (i = 0; i < 2; i++) {
@@ -184,6 +185,6 @@ int distance_char (
     return d;
 #endif
 
-#line 371 "edit-distance.c.tmpl"
+#line 372 "edit-distance.c.tmpl"
 }
 

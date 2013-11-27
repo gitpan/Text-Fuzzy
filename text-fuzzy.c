@@ -289,6 +289,17 @@ typedef struct text_fuzzy {
 
     candidate_t first;
     candidate_t * last;
+
+    /* When scanning an array, put the index of the element of the
+       array into "text_fuzzy->offset". The offset of the nearest
+       elements are preserved in the "candidate_t" linked list which
+       starts off with "text_fuzzy". 
+
+       There is currently no sanity check, so if the user forgets to
+       set "offset" each time around the loop, the code will not
+       notice anything amiss and just send a list of zeros back to the
+       user. */
+
     int offset;
 
     /* Does the user want to use an alphabet filter? Default is yes,
@@ -827,6 +838,12 @@ FUNC (begin_scanning) (text_fuzzy_t * text_fuzzy)
     text_fuzzy->ualphabet.rejections = 0;
     text_fuzzy->alphabet_rejections = 0;
     text_fuzzy->length_rejections = 0;
+
+    /* Set up the linked list. */
+
+    if (text_fuzzy->wantarray) {
+	text_fuzzy->last = & text_fuzzy->first;
+    }
 
     OK;
 }

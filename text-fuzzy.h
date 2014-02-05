@@ -240,24 +240,49 @@ typedef struct text_fuzzy {
     unsigned int wantarray : 1;
 }
 text_fuzzy_t;
-#line 186 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+
+/* The string is not unicode so its length in unicode characters is
+   unknown. */
+
+#define TEXT_FUZZY_INVALID_UNICODE_LENGTH -1
+#line 191 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_generate_ualphabet (text_fuzzy_t * tf);
-#line 371 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 376 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_compare_single (text_fuzzy_t * tf);
-#line 548 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 553 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_get_candidates (text_fuzzy_t * text_fuzzy, int * n_candidates_ptr, int ** candidates_ptr);
-#line 605 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 610 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_free_candidates (text_fuzzy_t * text_fuzzy, int * candidates);
-#line 622 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 627 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_generate_alphabet (text_fuzzy_t * text_fuzzy);
-#line 660 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 665 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_begin_scanning (text_fuzzy_t * text_fuzzy);
-#line 691 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 696 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_end_scanning (text_fuzzy_t * text_fuzzy);
-#line 785 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 790 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_scan_file (text_fuzzy_t * text_fuzzy, char * file_name, char ** nearest_ptr);
-#line 831 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 836 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_alphabet_rejections (text_fuzzy_t * text_fuzzy, int * r);
-#line 844 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+#line 849 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
 text_fuzzy_status_t text_fuzzy_free_memory (text_fuzzy_t * text_fuzzy);
+#line 855 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+text_fuzzy_status_t text_fuzzy_set_max_distance (text_fuzzy_t * text_fuzzy, int max_distance);
+#line 861 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+text_fuzzy_status_t text_fuzzy_get_max_distance (text_fuzzy_t * text_fuzzy, int * max_distance);
+#line 867 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+text_fuzzy_status_t text_fuzzy_set_transpositions (text_fuzzy_t * text_fuzzy, int transpositions);
+#line 873 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+text_fuzzy_status_t text_fuzzy_get_transpositions (text_fuzzy_t * text_fuzzy, int * transpositions);
+#line 879 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+text_fuzzy_status_t text_fuzzy_last_distance (text_fuzzy_t * text_fuzzy, int * last_distance);
+#line 889 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+text_fuzzy_status_t text_fuzzy_no_alphabet (text_fuzzy_t * text_fuzzy, int yes_no);
+#line 895 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+text_fuzzy_status_t text_fuzzy_ualphabet_rejections (text_fuzzy_t * text_fuzzy, int * ualphabet_rejections);
+#line 901 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+text_fuzzy_status_t text_fuzzy_set_no_exact (text_fuzzy_t * text_fuzzy, int yes_no);
+#line 907 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+text_fuzzy_status_t text_fuzzy_get_length_rejections (text_fuzzy_t * text_fuzzy, int * length_rejections);
+#line 918 "/usr/home/ben/projects/Text-Fuzzy/text-fuzzy.c.in"
+text_fuzzy_status_t text_fuzzy_get_unicode_length (text_fuzzy_t * text_fuzzy, int * unicode_length);
 #endif /* TEXT_FUZZY_H */
